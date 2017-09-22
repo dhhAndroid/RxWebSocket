@@ -18,6 +18,7 @@ import rx.Subscriber;
 import rx.android.MainThreadSubscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action0;
+import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
@@ -27,7 +28,7 @@ import rx.schedulers.Schedulers;
  * <p>
  * WebSocketUtil based on okhttp and RxJava
  * </p>
- *  Code Feature : WebSocket will be auto reconnection onFailed.
+ * Core Feature : WebSocket will be auto reconnection onFailed.
  */
 public class RxWebSocketUtil {
     private static RxWebSocketUtil instance;
@@ -35,6 +36,7 @@ public class RxWebSocketUtil {
     private OkHttpClient client;
 
     private Map<String, Observable<WebSocketInfo>> observableMap;
+    private Map<String, WebSocket> webSocketMap;
 
     private RxWebSocketUtil() {
         try {
@@ -53,6 +55,7 @@ public class RxWebSocketUtil {
             throw new RuntimeException("Must be dependency rxandroid 1.+");
         }
         observableMap = new ArrayMap<>();
+        webSocketMap = new ArrayMap<>();
         client = new OkHttpClient();
     }
 
@@ -97,12 +100,23 @@ public class RxWebSocketUtil {
                         @Override
                         public void call() {
                             observableMap.remove(url);
+                            Log.d("RxWebSocketUtil", "注销");
+                        }
+                    })
+                    .doOnNext(new Action1<WebSocketInfo>() {
+                        @Override
+                        public void call(WebSocketInfo webSocketInfo) {
+                            if (webSocketInfo.isOnOpen()) {
+                                webSocketMap.put(url, webSocketInfo.getWebSocket());
+                            }
                         }
                     })
                     .share()
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread());
             observableMap.put(url, observable);
+        } else {
+            observable.startWith(new WebSocketInfo(true));
         }
         return observable;
     }
@@ -124,6 +138,12 @@ public class RxWebSocketUtil {
                     public String call(WebSocketInfo webSocketInfo) {
                         return webSocketInfo.getString();
                     }
+                })
+                .filter(new Func1<String, Boolean>() {
+                    @Override
+                    public Boolean call(String s) {
+                        return s != null;
+                    }
                 });
     }
 
@@ -134,17 +154,43 @@ public class RxWebSocketUtil {
                     public ByteString call(WebSocketInfo webSocketInfo) {
                         return webSocketInfo.getByteString();
                     }
+                })
+                .filter(new Func1<ByteString, Boolean>() {
+                    @Override
+                    public Boolean call(ByteString byteString) {
+                        return byteString != null;
+                    }
                 });
     }
 
-    public Observable<WebSocket> getWebSocket(String url) {
-        return getWebSocketInfo(url)
-                .map(new Func1<WebSocketInfo, WebSocket>() {
-                    @Override
-                    public WebSocket call(WebSocketInfo webSocketInfo) {
-                        return webSocketInfo.getWebSocket();
-                    }
-                });
+    /**
+     * 如果url的WebSocket已经打开,可以直接调用这个发送消息.
+     *
+     * @param url
+     * @param msg
+     */
+    public void send(String url, String msg) {
+        WebSocket webSocket = webSocketMap.get(url);
+        if (webSocket != null) {
+            webSocket.send(msg);
+        } else {
+            throw new IllegalStateException("The WebSokcet not open");
+        }
+    }
+
+    /**
+     * 如果url的WebSocket已经打开,可以直接调用这个发送消息.
+     *
+     * @param url
+     * @param byteString
+     */
+    public void send(String url, ByteString byteString) {
+        WebSocket webSocket = webSocketMap.get(url);
+        if (webSocket != null) {
+            webSocket.send(byteString);
+        } else {
+            throw new IllegalStateException("The WebSokcet not open");
+        }
     }
 
     private Request getRequest(String url) {
@@ -156,10 +202,11 @@ public class RxWebSocketUtil {
 
         private WebSocket webSocket;
 
-        private WebSocketInfo stringInfo, byteStringInfo;
+        private WebSocketInfo startInfo, stringInfo, byteStringInfo;
 
         public WebSocketOnSubscribe(String url) {
             this.url = url;
+            startInfo = new WebSocketInfo(true);
             stringInfo = new WebSocketInfo();
             byteStringInfo = new WebSocketInfo();
         }
@@ -176,11 +223,14 @@ public class RxWebSocketUtil {
                 @Override
                 public void onOpen(final WebSocket webSocket, Response response) {
                     Log.d("WebSocketUtil", url + " --> onOpen");
+                    webSocketMap.put(url, webSocket);
                     AndroidSchedulers.mainThread().createWorker().schedule(new Action0() {
                         @Override
                         public void call() {
                             if (!subscriber.isUnsubscribed()) {
                                 subscriber.onStart();
+                                startInfo.setWebSocket(webSocket);
+                                subscriber.onNext(startInfo);
                             }
                         }
                     });

@@ -1,5 +1,7 @@
 package com.dhh.websocket;
 
+import android.support.annotation.Nullable;
+
 import okhttp3.WebSocket;
 import okio.ByteString;
 
@@ -11,8 +13,13 @@ public class WebSocketInfo implements Cloneable {
     private WebSocket mWebSocket;
     private String mString;
     private ByteString mByteString;
+    private boolean onOpen;
 
     public WebSocketInfo() {
+    }
+
+    public WebSocketInfo(boolean onOpen) {
+        this.onOpen = onOpen;
     }
 
     public WebSocketInfo(WebSocket webSocket, String mString) {
@@ -33,6 +40,7 @@ public class WebSocketInfo implements Cloneable {
         mWebSocket = webSocket;
     }
 
+    @Nullable
     public String getString() {
         return mString;
     }
@@ -41,11 +49,16 @@ public class WebSocketInfo implements Cloneable {
         this.mString = string;
     }
 
+    @Nullable
     public ByteString getByteString() {
         return mByteString;
     }
 
     public void setByteString(ByteString byteString) {
         mByteString = byteString;
+    }
+
+    public boolean isOnOpen() {
+        return onOpen;
     }
 }
