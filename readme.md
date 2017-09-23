@@ -4,8 +4,10 @@
 ![](image/WebSocket.gif)
 
 ## how to use ##
-###添加依赖:
-####项目gradle下:
+
+### 添加依赖: ###
+
+#### 项目gradle下: ####
 ```
 allprojects {
     repositories {
@@ -14,10 +16,11 @@ allprojects {
 }
 ```
 
-### 本项目依赖 okhttp和RxJava,RxAndroid开发,所以在module下除了加入本项目依赖,还需加入okhttp和RxJava,RxAndroid依赖:
+#### 本项目依赖 okhttp和RxJava,RxAndroid开发,所以在module下除了加入本项目依赖,还需加入okhttp和RxJava,RxAndroid依赖:
 ```
 //本项目
 compile 'com.dhh:websocket:1.3.0'
+
 //okhttp,RxJava,RxAndroid
 compile 'com.squareup.okhttp3:okhttp:3.9.0'
 compile 'io.reactivex:rxjava:1.3.1'
@@ -60,11 +63,13 @@ mWebSocket.send("hello word");
 ```
 ### 发送消息 ###
 ```
-mWebSocket.send("hello word");
+  //用WebSocket的引用直接发
+  mWebSocket.send("hello word");
 
   //url 对应的WebSocket已经打开可以这样send,否则报错
   RxWebSocketUtil.getInstance().send(url, "hello");
   RxWebSocketUtil.getInstance().send(url, ByteString.EMPTY);
+
   //异步发送,若WebSocket已经打开,直接发送,若没有打开,打开一个WebSocket发送完数据,直接关闭.
   RxWebSocketUtil.getInstance().asyncSend(url, "hello");
   RxWebSocketUtil.getInstance().asyncSend(url, ByteString.EMPTY);
