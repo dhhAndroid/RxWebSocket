@@ -22,6 +22,11 @@ public class WebSocketInfo implements Cloneable {
         this.onOpen = onOpen;
     }
 
+    public WebSocketInfo(WebSocket webSocket, boolean onOpen) {
+        mWebSocket = webSocket;
+        this.onOpen = onOpen;
+    }
+
     public WebSocketInfo(WebSocket webSocket, String mString) {
         mWebSocket = webSocket;
         this.mString = mString;

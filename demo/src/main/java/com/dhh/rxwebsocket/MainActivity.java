@@ -13,12 +13,18 @@ import com.dhh.websocket.RxWebSocketUtil;
 import com.dhh.websocket.WebSocketInfo;
 import com.jakewharton.rxbinding.view.RxView;
 
+import okhttp3.Response;
 import okhttp3.WebSocket;
+import okhttp3.WebSocketListener;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
 import okio.ByteString;
 import rx.Observable;
 import rx.Subscription;
+import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.functions.Func1;
+import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
 
 public class MainActivity extends AppCompatActivity {
@@ -37,13 +43,20 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initView();
-        //from : http://www.blue-zero.com/WebSocket/     .  thanks
-        url = "ws://121.40.165.18:8088";
+
+
+        Schedulers.io().createWorker().schedule(new Action0() {
+            @Override
+            public void call() {
+                initServerWebsocket();
+            }
+        });
 
         //if you want to set your okhttpClient
 //        OkHttpClient yourClient = new OkHttpClient();
 //        RxWebSocketUtil.getInstance().setClient(yourClient);
 
+        RxWebSocketUtil.getInstance().setShowLog(BuildConfig.DEBUG);
         final int type = 2;  // 1, 2, 3.
         contect(type);
 
@@ -52,16 +65,42 @@ public class MainActivity extends AppCompatActivity {
         send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                String msg = editText.getText().toString();
                 if (mWebSocket != null) {
-                    mWebSocket.send(editText.getText().toString());
+                    mWebSocket.send(msg);
                 } else {
-                    RxWebSocketUtil.getInstance().send(url, editText.getText().toString());
+                    send();
                 }
             }
         });
     }
 
-    //=================================== my lifecycle ===================================//
+    private void initServerWebsocket() {
+        final MockWebServer mockWebServer = new MockWebServer();
+        url = "ws://" + mockWebServer.getHostName() + ":" + mockWebServer.getPort() + "/";
+        mockWebServer.enqueue(new MockResponse().withWebSocketUpgrade(new WebSocketListener() {
+            @Override
+            public void onOpen(WebSocket webSocket, Response response) {
+                webSocket.send("hello, I am  dhhAndroid !");
+            }
+
+            @Override
+            public void onMessage(WebSocket webSocket, String text) {
+                Log.d("MainActivity", "收到客户端消息:" + text);
+                webSocket.send("Server response:" + text);
+            }
+
+            @Override
+            public void onClosed(WebSocket webSocket, int code, String reason) {
+            }
+
+            @Override
+            public void onFailure(WebSocket webSocket, Throwable t, Response response) {
+            }
+        }));
+    }
+
+    //=================================== my lifecycle  start===================================//
     public Observable<ActivityEvent> bindOndestroy() {
         return lifeCycle.takeFirst(new Func1<ActivityEvent, Boolean>() {
             @Override
@@ -101,7 +140,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-//=================================== my lifecycle ===================================//
+//=================================== my lifecycle  end===================================//
 
 
     private void contect(int type) {
@@ -219,6 +258,23 @@ public class MainActivity extends AppCompatActivity {
 
                     }
                 });
+        //get WebSocket
+        RxWebSocketUtil.getInstance().getWebSocket(url)
+                .subscribe(new Action1<WebSocket>() {
+                    @Override
+                    public void call(WebSocket webSocket) {
+
+                    }
+                });
+    }
+
+    public void send() {
+        //url 对应的WebSocket 必须打开,否则报错
+        RxWebSocketUtil.getInstance().send(url, "hello");
+        RxWebSocketUtil.getInstance().send(url, ByteString.EMPTY);
+        //异步发送,若WebSocket已经打开,直接发送,若没有打开,打开一个WebSocket发送完数据,直接关闭.
+        RxWebSocketUtil.getInstance().asyncSend(url, "hello");
+        RxWebSocketUtil.getInstance().asyncSend(url, ByteString.EMPTY);
     }
 
     private void initView() {

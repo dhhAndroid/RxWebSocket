@@ -37,6 +37,7 @@ public class RxWebSocketUtil {
 
     private Map<String, Observable<WebSocketInfo>> observableMap;
     private Map<String, WebSocket> webSocketMap;
+    private boolean showLog;
 
     private RxWebSocketUtil() {
         try {
@@ -82,6 +83,10 @@ public class RxWebSocketUtil {
         this.client = client;
     }
 
+    public void setShowLog(boolean showLog) {
+        this.showLog = showLog;
+    }
+
     /**
      * @param url      ws://127.0.0.1:8080/websocket
      * @param timeout  The WebSocket will be reconnected after the specified time interval is not "onMessage",
@@ -100,7 +105,10 @@ public class RxWebSocketUtil {
                         @Override
                         public void call() {
                             observableMap.remove(url);
-                            Log.d("RxWebSocketUtil", "注销");
+                            webSocketMap.remove(url);
+                            if (showLog) {
+                                Log.d("RxWebSocketUtil", "注销");
+                            }
                         }
                     })
                     .doOnNext(new Action1<WebSocketInfo>() {
@@ -116,7 +124,7 @@ public class RxWebSocketUtil {
                     .observeOn(AndroidSchedulers.mainThread());
             observableMap.put(url, observable);
         } else {
-            observable.startWith(new WebSocketInfo(true));
+            observable = Observable.merge(Observable.just(new WebSocketInfo(webSocketMap.get(url), true)), observable);
         }
         return observable;
     }
@@ -163,6 +171,16 @@ public class RxWebSocketUtil {
                 });
     }
 
+    public Observable<WebSocket> getWebSocket(String url) {
+        return getWebSocketInfo(url)
+                .map(new Func1<WebSocketInfo, WebSocket>() {
+                    @Override
+                    public WebSocket call(WebSocketInfo webSocketInfo) {
+                        return webSocketInfo.getWebSocket();
+                    }
+                });
+    }
+
     /**
      * 如果url的WebSocket已经打开,可以直接调用这个发送消息.
      *
@@ -193,6 +211,41 @@ public class RxWebSocketUtil {
         }
     }
 
+    /**
+     * 不用关心url 的WebSocket是否打开,可以直接发送
+     *
+     * @param url
+     * @param msg
+     */
+    public void asyncSend(String url, final String msg) {
+        getWebSocket(url)
+                .first()
+                .subscribe(new Action1<WebSocket>() {
+                    @Override
+                    public void call(WebSocket webSocket) {
+                        webSocket.send(msg);
+                    }
+                });
+
+    }
+
+    /**
+     * 不用关心url 的WebSocket是否打开,可以直接发送
+     *
+     * @param url
+     * @param byteString
+     */
+    public void asyncSend(String url, final ByteString byteString) {
+        getWebSocket(url)
+                .first()
+                .subscribe(new Action1<WebSocket>() {
+                    @Override
+                    public void call(WebSocket webSocket) {
+                        webSocket.send(byteString);
+                    }
+                });
+    }
+
     private Request getRequest(String url) {
         return new Request.Builder().get().url(url).build();
     }
@@ -219,10 +272,16 @@ public class RxWebSocketUtil {
                     SystemClock.sleep(2000);
                 }
             }
+            initWebSocket(subscriber);
+        }
+
+        private void initWebSocket(final Subscriber<? super WebSocketInfo> subscriber) {
             webSocket = client.newWebSocket(getRequest(url), new WebSocketListener() {
                 @Override
                 public void onOpen(final WebSocket webSocket, Response response) {
-                    Log.d("WebSocketUtil", url + " --> onOpen");
+                    if (showLog) {
+                        Log.d("RxWebSocketUtil", url + " --> onOpen");
+                    }
                     webSocketMap.put(url, webSocket);
                     AndroidSchedulers.mainThread().createWorker().schedule(new Action0() {
                         @Override
@@ -256,7 +315,9 @@ public class RxWebSocketUtil {
 
                 @Override
                 public void onFailure(WebSocket webSocket, Throwable t, Response response) {
-                    Log.e("WebSocketUtil", t.toString() + webSocket.request().url().uri().getPath());
+                    if (showLog) {
+                        Log.e("RxWebSocketUtil", t.toString() + webSocket.request().url().uri().getPath());
+                    }
                     if (!subscriber.isUnsubscribed()) {
                         subscriber.onError(t);
                     }
@@ -269,7 +330,9 @@ public class RxWebSocketUtil {
 
                 @Override
                 public void onClosed(WebSocket webSocket, int code, String reason) {
-                    Log.d("WebSocketUtil", url + " --> onClosed:code= " + code);
+                    if (showLog) {
+                        Log.d("RxWebSocketUtil", url + " --> onClosed:code= " + code);
+                    }
                 }
             });
             subscriber.add(new MainThreadSubscription() {
