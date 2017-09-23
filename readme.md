@@ -3,7 +3,26 @@
 ## 效果图 ##
 ![](image/WebSocket.gif)
 
-## Usage ##
+## how to use ##
+###添加依赖:
+####项目gradle下:
+```
+allprojects {
+    repositories {
+        jcenter()
+    }
+}
+```
+
+### 本项目依赖 okhttp和RxJava,RxAndroid开发,所以在module下除了加入本项目依赖,还需加入okhttp和RxJava,RxAndroid依赖:
+```
+//本项目
+compile 'com.dhh:websocket:1.3.0'
+//okhttp,RxJava,RxAndroid
+compile 'com.squareup.okhttp3:okhttp:3.9.0'
+compile 'io.reactivex:rxjava:1.3.1'
+compile 'io.reactivex:rxandroid:1.2.1'
+```
 ### open WebSocket
 
 ```
@@ -43,8 +62,12 @@ mWebSocket.send("hello word");
 ```
 mWebSocket.send("hello word");
 
-//如果指定URL的WebSocket已经打开,也可以这样使用
-RxWebSocketUtil.getInstance().send(url, "hello word");
+  //url 对应的WebSocket已经打开可以这样send,否则报错
+  RxWebSocketUtil.getInstance().send(url, "hello");
+  RxWebSocketUtil.getInstance().send(url, ByteString.EMPTY);
+  //异步发送,若WebSocket已经打开,直接发送,若没有打开,打开一个WebSocket发送完数据,直接关闭.
+  RxWebSocketUtil.getInstance().asyncSend(url, "hello");
+  RxWebSocketUtil.getInstance().asyncSend(url, ByteString.EMPTY);
 ```
 ### 注销 ###
  RxJava的注销方式,就可以取消订阅. 项目里的demo里,简单实现了一个RxLifecycle.仅供参考.
