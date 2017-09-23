@@ -99,8 +99,10 @@ public class RxWebSocketUtil {
         Observable<WebSocketInfo> observable = observableMap.get(url);
         if (observable == null) {
             observable = Observable.create(new WebSocketOnSubscribe(url))
+                    //自动重连
                     .timeout(timeout, timeUnit)
                     .retry()
+                    //共享
                     .doOnUnsubscribe(new Action0() {
                         @Override
                         public void call() {

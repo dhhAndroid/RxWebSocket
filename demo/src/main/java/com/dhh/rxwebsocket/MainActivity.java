@@ -13,6 +13,8 @@ import com.dhh.websocket.RxWebSocketUtil;
 import com.dhh.websocket.WebSocketInfo;
 import com.jakewharton.rxbinding.view.RxView;
 
+import java.util.concurrent.TimeUnit;
+
 import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
@@ -263,6 +265,13 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(new Action1<WebSocket>() {
                     @Override
                     public void call(WebSocket webSocket) {
+
+                    }
+                });
+        RxWebSocketUtil.getInstance().getWebSocketInfo(url, 10, TimeUnit.SECONDS)
+                .subscribe(new Action1<WebSocketInfo>() {
+                    @Override
+                    public void call(WebSocketInfo webSocketInfo) {
 
                     }
                 });

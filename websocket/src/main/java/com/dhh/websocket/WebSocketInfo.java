@@ -9,7 +9,7 @@ import okio.ByteString;
  * Created by dhh on 2017/9/21.
  */
 
-public class WebSocketInfo implements Cloneable {
+public class WebSocketInfo {
     private WebSocket mWebSocket;
     private String mString;
     private ByteString mByteString;
