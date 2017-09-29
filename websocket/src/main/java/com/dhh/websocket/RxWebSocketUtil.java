@@ -43,17 +43,17 @@ public class RxWebSocketUtil {
         try {
             Class.forName("okhttp3.OkHttpClient");
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Must be dependency okhtt");
+            throw new RuntimeException("Must be dependency okhttp3 !");
         }
         try {
             Class.forName("rx.Observable");
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Must be dependency rxjava 1.+");
+            throw new RuntimeException("Must be dependency rxjava 1.x");
         }
         try {
             Class.forName("rx.android.schedulers.AndroidSchedulers");
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Must be dependency rxandroid 1.+");
+            throw new RuntimeException("Must be dependency rxandroid 1.x");
         }
         observableMap = new ArrayMap<>();
         webSocketMap = new ArrayMap<>();

@@ -75,6 +75,13 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+        Subscription subscription = RxWebSocketUtil.getInstance().getWebSocketString("ws://sdfs").subscribe();
+        if (subscription != null && !subscription.isUnsubscribed()) {
+            subscription.unsubscribe();
+        }
+
+
     }
 
     private void initServerWebsocket() {
@@ -268,6 +275,7 @@ public class MainActivity extends AppCompatActivity {
 
                     }
                 });
+        //with timeout
         RxWebSocketUtil.getInstance().getWebSocketInfo(url, 10, TimeUnit.SECONDS)
                 .subscribe(new Action1<WebSocketInfo>() {
                     @Override
