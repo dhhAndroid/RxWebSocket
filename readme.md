@@ -5,6 +5,7 @@
 ## 这是RxJava2版本
 ## RxWebSocket是一个基于okhttp和RxJava封装的WebSocket客户端,此库的核心特点是  除了手动关闭WebSocket(就是RxJava取消订阅),WebSocket在异常关闭的时候(onFailure,发生异常,如WebSocketException等等),会自动重连,永不断连.其次,对WebSocket做的缓存处理,同一个URL,共享一个WebSocket.
 ## 原理解析: [戳我戳我戳我](http://blog.csdn.net/huiAndroid/article/details/78071703)
+##[RxJava1版本点我](https://github.com/dhhAndroid/RxWebSocket)
 ## 效果图 ##
 ![](image/WebSocket.gif)
 ### 断网重连测试
