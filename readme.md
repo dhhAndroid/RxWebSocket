@@ -20,7 +20,7 @@
 ```
 
 	//本项目
-	compile 'com.dhh:websocket:1.3.0'
+	compile 'com.dhh:websocket2:1.3.0'
 	
 	//okhttp,RxJava,RxAndroid
 	compile 'com.squareup.okhttp3:okhttp:3.9.0'
