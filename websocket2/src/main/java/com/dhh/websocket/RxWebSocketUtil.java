@@ -7,20 +7,23 @@ import android.util.Log;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Cancellable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import io.reactivex.functions.Predicate;
+import io.reactivex.schedulers.Schedulers;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 import okio.ByteString;
-import rx.Observable;
-import rx.Subscriber;
-import rx.android.MainThreadSubscription;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action0;
-import rx.functions.Action1;
-import rx.functions.Func1;
-import rx.schedulers.Schedulers;
 
 
 /**
@@ -46,14 +49,14 @@ public class RxWebSocketUtil {
             throw new RuntimeException("Must be dependency okhttp3 !");
         }
         try {
-            Class.forName("rx.Observable");
+            Class.forName("io.reactivex.Observable");
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Must be dependency rxjava 1.x");
+            throw new RuntimeException("Must be dependency rxjava 2.x");
         }
         try {
-            Class.forName("rx.android.schedulers.AndroidSchedulers");
+            Class.forName("io.reactivex.android.schedulers.AndroidSchedulers");
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Must be dependency rxandroid 1.x");
+            throw new RuntimeException("Must be dependency rxandroid 2.x");
         }
         observableMap = new ArrayMap<>();
         webSocketMap = new ArrayMap<>();
@@ -78,7 +81,7 @@ public class RxWebSocketUtil {
      */
     public void setClient(OkHttpClient client) {
         if (client == null) {
-            throw new NullPointerException(" Are you stupid ? client == null");
+            throw new NullPointerException(" Are you kidding me ? client == null");
         }
         this.client = client;
     }
@@ -103,9 +106,9 @@ public class RxWebSocketUtil {
                     .timeout(timeout, timeUnit)
                     .retry()
                     //共享
-                    .doOnUnsubscribe(new Action0() {
+                    .doOnDispose(new Action() {
                         @Override
-                        public void call() {
+                        public void run() throws Exception {
                             observableMap.remove(url);
                             webSocketMap.remove(url);
                             if (showLog) {
@@ -113,9 +116,9 @@ public class RxWebSocketUtil {
                             }
                         }
                     })
-                    .doOnNext(new Action1<WebSocketInfo>() {
+                    .doOnNext(new Consumer<WebSocketInfo>() {
                         @Override
-                        public void call(WebSocketInfo webSocketInfo) {
+                        public void accept(WebSocketInfo webSocketInfo) throws Exception {
                             if (webSocketInfo.isOnOpen()) {
                                 webSocketMap.put(url, webSocketInfo.getWebSocket());
                             }
@@ -143,41 +146,41 @@ public class RxWebSocketUtil {
 
     public Observable<String> getWebSocketString(String url) {
         return getWebSocketInfo(url)
-                .map(new Func1<WebSocketInfo, String>() {
+                .filter(new Predicate<WebSocketInfo>() {
                     @Override
-                    public String call(WebSocketInfo webSocketInfo) {
-                        return webSocketInfo.getString();
+                    public boolean test(@NonNull WebSocketInfo webSocketInfo) throws Exception {
+                        return webSocketInfo.getString() != null;
                     }
                 })
-                .filter(new Func1<String, Boolean>() {
+                .map(new Function<WebSocketInfo, String>() {
                     @Override
-                    public Boolean call(String s) {
-                        return s != null;
+                    public String apply(@NonNull WebSocketInfo webSocketInfo) throws Exception {
+                        return webSocketInfo.getString();
                     }
                 });
     }
 
     public Observable<ByteString> getWebSocketByteString(String url) {
         return getWebSocketInfo(url)
-                .map(new Func1<WebSocketInfo, ByteString>() {
+                .filter(new Predicate<WebSocketInfo>() {
                     @Override
-                    public ByteString call(WebSocketInfo webSocketInfo) {
-                        return webSocketInfo.getByteString();
+                    public boolean test(@NonNull WebSocketInfo webSocketInfo) throws Exception {
+                        return webSocketInfo.getByteString() != null;
                     }
                 })
-                .filter(new Func1<ByteString, Boolean>() {
+                .map(new Function<WebSocketInfo, ByteString>() {
                     @Override
-                    public Boolean call(ByteString byteString) {
-                        return byteString != null;
+                    public ByteString apply(WebSocketInfo webSocketInfo) throws Exception {
+                        return webSocketInfo.getByteString();
                     }
                 });
     }
 
     public Observable<WebSocket> getWebSocket(String url) {
         return getWebSocketInfo(url)
-                .map(new Func1<WebSocketInfo, WebSocket>() {
+                .map(new Function<WebSocketInfo, WebSocket>() {
                     @Override
-                    public WebSocket call(WebSocketInfo webSocketInfo) {
+                    public WebSocket apply(@NonNull WebSocketInfo webSocketInfo) throws Exception {
                         return webSocketInfo.getWebSocket();
                     }
                 });
@@ -221,10 +224,10 @@ public class RxWebSocketUtil {
      */
     public void asyncSend(String url, final String msg) {
         getWebSocket(url)
-                .first()
-                .subscribe(new Action1<WebSocket>() {
+                .take(1)
+                .subscribe(new Consumer<WebSocket>() {
                     @Override
-                    public void call(WebSocket webSocket) {
+                    public void accept(WebSocket webSocket) throws Exception {
                         webSocket.send(msg);
                     }
                 });
@@ -239,10 +242,10 @@ public class RxWebSocketUtil {
      */
     public void asyncSend(String url, final ByteString byteString) {
         getWebSocket(url)
-                .first()
-                .subscribe(new Action1<WebSocket>() {
+                .take(1)
+                .subscribe(new Consumer<WebSocket>() {
                     @Override
-                    public void call(WebSocket webSocket) {
+                    public void accept(WebSocket webSocket) throws Exception {
                         webSocket.send(byteString);
                     }
                 });
@@ -252,7 +255,7 @@ public class RxWebSocketUtil {
         return new Request.Builder().get().url(url).build();
     }
 
-    private final class WebSocketOnSubscribe implements Observable.OnSubscribe<WebSocketInfo> {
+    private final class WebSocketOnSubscribe implements ObservableOnSubscribe<WebSocketInfo> {
         private String url;
 
         private WebSocket webSocket;
@@ -267,17 +270,17 @@ public class RxWebSocketUtil {
         }
 
         @Override
-        public void call(final Subscriber<? super WebSocketInfo> subscriber) {
+        public void subscribe(@NonNull ObservableEmitter<WebSocketInfo> e) throws Exception {
             if (webSocket != null) {
                 //降低重连频率
                 if (!"main".equals(Thread.currentThread().getName())) {
                     SystemClock.sleep(2000);
                 }
             }
-            initWebSocket(subscriber);
+            initWebSocket(e);
         }
 
-        private void initWebSocket(final Subscriber<? super WebSocketInfo> subscriber) {
+        private void initWebSocket(final ObservableEmitter<WebSocketInfo> emitter) {
             webSocket = client.newWebSocket(getRequest(url), new WebSocketListener() {
                 @Override
                 public void onOpen(final WebSocket webSocket, Response response) {
@@ -285,13 +288,12 @@ public class RxWebSocketUtil {
                         Log.d("RxWebSocketUtil", url + " --> onOpen");
                     }
                     webSocketMap.put(url, webSocket);
-                    AndroidSchedulers.mainThread().createWorker().schedule(new Action0() {
+                    AndroidSchedulers.mainThread().createWorker().schedule(new Runnable() {
                         @Override
-                        public void call() {
-                            if (!subscriber.isUnsubscribed()) {
-                                subscriber.onStart();
+                        public void run() {
+                            if (!emitter.isDisposed()) {
                                 startInfo.setWebSocket(webSocket);
-                                subscriber.onNext(startInfo);
+                                emitter.onNext(startInfo);
                             }
                         }
                     });
@@ -299,19 +301,19 @@ public class RxWebSocketUtil {
 
                 @Override
                 public void onMessage(WebSocket webSocket, String text) {
-                    if (!subscriber.isUnsubscribed()) {
+                    if (!emitter.isDisposed()) {
                         stringInfo.setWebSocket(webSocket);
                         stringInfo.setString(text);
-                        subscriber.onNext(stringInfo);
+                        emitter.onNext(stringInfo);
                     }
                 }
 
                 @Override
                 public void onMessage(WebSocket webSocket, ByteString bytes) {
-                    if (!subscriber.isUnsubscribed()) {
+                    if (!emitter.isDisposed()) {
                         byteStringInfo.setWebSocket(webSocket);
                         byteStringInfo.setByteString(bytes);
-                        subscriber.onNext(byteStringInfo);
+                        emitter.onNext(byteStringInfo);
                     }
                 }
 
@@ -320,8 +322,8 @@ public class RxWebSocketUtil {
                     if (showLog) {
                         Log.e("RxWebSocketUtil", t.toString() + webSocket.request().url().uri().getPath());
                     }
-                    if (!subscriber.isUnsubscribed()) {
-                        subscriber.onError(t);
+                    if (!emitter.isDisposed()) {
+                        emitter.onError(t);
                     }
                 }
 
@@ -337,13 +339,12 @@ public class RxWebSocketUtil {
                     }
                 }
             });
-            subscriber.add(new MainThreadSubscription() {
+            emitter.setCancellable(new Cancellable() {
                 @Override
-                protected void onUnsubscribe() {
+                public void cancel() throws Exception {
                     webSocket.close(3000, "手动关闭");
                 }
             });
         }
-
     }
 }

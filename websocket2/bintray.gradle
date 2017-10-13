@@ -73,7 +73,7 @@ task releaseJar(type: Copy) {
     from('build/intermediates/bundles/default')
     into('../jar')
     include('classes.jar')
-    rename('classes.jar', 'websocket' + version + '.jar')
+    rename('classes.jar', 'websocket2' + version + '.jar')
 }
 
 Properties properties = new Properties()
@@ -84,7 +84,7 @@ bintray {
     configurations = ['archives']
     pkg {
         repo = "maven"
-        name = " rxwebsocket"             // 仓库名称
+        name = "RxWebSocket2"             // 仓库名称
         websiteUrl = siteUrl
         vcsUrl = gitUrl
         licenses = ["Apache-2.0"]

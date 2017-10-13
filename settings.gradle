@@ -1,1 +1,1 @@
-include ':demo', ':websocket'
+include ':demo', ':websocket2'

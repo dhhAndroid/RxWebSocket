@@ -2,6 +2,7 @@
 [ ![Download](https://api.bintray.com/packages/dhhandroid/maven/rxwebsocket/images/download.svg) ](https://bintray.com/dhhandroid/maven/rxwebsocket/_latestVersion)
 [ ![API](https://img.shields.io/badge/API-11%2B-blue.svg?style=flat-square) ](https://developer.android.com/about/versions/android-3.0.html)
 [ ![License](http://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square) ](http://www.apache.org/licenses/LICENSE-2.0)
+## 这是RxJava2版本
 ## RxWebSocket是一个基于okhttp和RxJava封装的WebSocket客户端,此库的核心特点是  除了手动关闭WebSocket(就是RxJava取消订阅),WebSocket在异常关闭的时候(onFailure,发生异常,如WebSocketException等等),会自动重连,永不断连.其次,对WebSocket做的缓存处理,同一个URL,共享一个WebSocket.
 ## 原理解析: [戳我戳我戳我](http://blog.csdn.net/huiAndroid/article/details/78071703)
 ## 效果图 ##
@@ -21,8 +22,8 @@
 	
 	//okhttp,RxJava,RxAndroid
 	compile 'com.squareup.okhttp3:okhttp:3.9.0'
-	compile 'io.reactivex:rxjava:1.3.1'
-	compile 'io.reactivex:rxandroid:1.2.1'
+    compile 'io.reactivex.rxjava2:rxjava:2.1.5'
+    compile 'io.reactivex.rxjava2:rxandroid:2.0.1'
 ```
 ### init
 ```
@@ -38,68 +39,86 @@
 
 ```
 
-	RxWebSocketUtil.getInstance().getWebSocketInfo(url)
-	                        .subscribe(new Action1<WebSocketInfo>() {
-	                            @Override
-	                            public void call(WebSocketInfo webSocketInfo) {
-	                                mWebSocket = webSocketInfo.getWebSocket();
-	                                Log.d("MainActivity", webSocketInfo.getString());
-	                                Log.d("MainActivity", "webSocketInfo.getByteString():" + webSocketInfo.getByteString());
-	                            }
-	                        });
+        mDisposable = RxWebSocketUtil.getInstance().getWebSocketInfo(url)
+                //bind on life
+                .takeUntil(bindOndestroy())
+                .subscribe(new Consumer<WebSocketInfo>() {
+                    @Override
+                    public void accept(WebSocketInfo webSocketInfo) throws Exception {
+                        mWebSocket = webSocketInfo.getWebSocket();
+                        if (webSocketInfo.isOnOpen()) {
+                            Log.d("MainActivity", " on WebSocket open");
+                        } else {
+
+                            String string = webSocketInfo.getString();
+                            if (string != null) {
+                                Log.d("MainActivity", string);
+                                textview.setText(Html.fromHtml(string));
+
+                            }
+
+                            ByteString byteString = webSocketInfo.getByteString();
+                            if (byteString != null) {
+                                Log.d("MainActivity", "webSocketInfo.getByteString():" + byteString);
+
+                            }
+                        }
+
+                    }
+                });
 	
 	mWebSocket.send("hello word");
 
-    //get StringMsg
-    RxWebSocketUtil.getInstance().getWebSocketString(url)
-            .subscribe(new Action1<String>() {
-                @Override
-                public void call(String s) {
-                }
-            });
-    // get ByteString
-    RxWebSocketUtil.getInstance().getWebSocketByteString(url)
-            .subscribe(new Action1<ByteString>() {
-                @Override
-                public void call(ByteString byteString) {
+        //get StringMsg
+        RxWebSocketUtil.getInstance().getWebSocketString(url)
+                .subscribe(new Consumer<String>() {
+                    @Override
+                    public void accept(String s) throws Exception {
 
-                }
-            });
-    //get WebSocket
-    RxWebSocketUtil.getInstance().getWebSocket(url)
-            .subscribe(new Action1<WebSocket>() {
-                @Override
-                public void call(WebSocket webSocket) {
+                    }
+                });
+        // get ByteString
+        RxWebSocketUtil.getInstance().getWebSocketByteString(url)
+                .subscribe(new Consumer<ByteString>() {
+                    @Override
+                    public void accept(ByteString byteString) throws Exception {
 
-                }
-            });
-	//with timeout
-    RxWebSocketUtil.getInstance().getWebSocketInfo(url, 10, TimeUnit.SECONDS)
-            .subscribe(new Action1<WebSocketInfo>() {
-                @Override
-                public void call(WebSocketInfo webSocketInfo) {
+                    }
+                });
+        //get WebSocket
+        RxWebSocketUtil.getInstance().getWebSocket(url)
+                .subscribe(new Consumer<WebSocket>() {
+                    @Override
+                    public void accept(WebSocket webSocket) throws Exception {
 
-                }
-            });
+                    }
+                });
+        //with timeout
+        RxWebSocketUtil.getInstance().getWebSocketInfo(url, 10, TimeUnit.SECONDS)
+                .subscribe(new Consumer<WebSocketInfo>() {
+                    @Override
+                    public void accept(WebSocketInfo webSocketInfo) throws Exception {
+
+                    }
+                });
 ```
 ```  
 
 	// Rxbinding
     RxView.clicks(centect)
-            .flatMap(new Func1<Void, Observable<String>>() {
+            .flatMap(new Function<Object, ObservableSource<String>>() {
                 @Override
-                public Observable<String> call(Void aVoid) {
+                public ObservableSource<String> apply(@NonNull Object o) throws Exception {
                     return RxWebSocketUtil.getInstance().getWebSocketString(url);
                 }
             })
-            .subscribe(new Action1<String>() {
+            .subscribe(new Consumer<String>() {
                 @Override
-                public void call(String s) {
+                public void accept(String s) throws Exception {
                     //the s !=null
 
                     Log.d("MainActivity", s);
                     textview.setText(Html.fromHtml(s));
-
                 }
             });
 ```
@@ -118,7 +137,8 @@
 	  RxWebSocketUtil.getInstance().asyncSend(url, ByteString.EMPTY);
 ```
 ### 注销 ###
- RxJava的注销方式,就可以取消订阅. 项目里的demo里,简单实现了一个Lifecycle.仅供参考.
+### RxJava的注销方式,就可以取消订阅. 优雅地处理RxJava注销,请查看我另外一个项目:[RxLifecycle](https://github.com/dhhAndroid/RxLifecycle).
+
 ```
 
     Subscription subscription = RxWebSocketUtil.getInstance().getWebSocketString("ws://sdfs").subscribe();
