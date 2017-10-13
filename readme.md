@@ -1,6 +1,6 @@
 # RxWebSocket #
 [![](https://img.shields.io/badge/platform-android-brightgreen.svg)](https://developer.android.com/index.html) 
-[ ![Download](https://api.bintray.com/packages/dhhandroid/maven/rxwebsocket/images/download.svg) ](https://bintray.com/dhhandroid/maven/rxwebsocket/_latestVersion)
+[ ![Download](https://api.bintray.com/packages/dhhandroid/maven/RxWebSocket2/images/download.svg) ](https://bintray.com/dhhandroid/maven/RxWebSocket2/_latestVersion)
 [ ![API](https://img.shields.io/badge/API-11%2B-blue.svg?style=flat-square) ](https://developer.android.com/about/versions/android-3.0.html)
 [ ![License](http://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square) ](http://www.apache.org/licenses/LICENSE-2.0)
 ## 这是RxJava2版本
