@@ -19,13 +19,13 @@
 #### 本项目依赖 okhttp和RxJava,RxAndroid开发,所以在module下除了加入本项目依赖,还需加入okhttp和RxJava,RxAndroid依赖:
 ```
 
-	//本项目
-	compile 'com.dhh:websocket2:1.3.0'
-	
-	//okhttp,RxJava,RxAndroid
-	compile 'com.squareup.okhttp3:okhttp:3.9.0'
-    compile 'io.reactivex.rxjava2:rxjava:2.1.5'
-    compile 'io.reactivex.rxjava2:rxandroid:2.0.1'
+		//本项目
+		compile 'com.dhh:websocket2:1.3.0'
+			
+		//okhttp,RxJava2,RxAndroid2
+		compile 'com.squareup.okhttp3:okhttp:3.9.0'
+		compile 'io.reactivex.rxjava2:rxjava:2.1.5'
+		compile 'io.reactivex.rxjava2:rxandroid:2.0.1'
 ```
 ### init
 ```
