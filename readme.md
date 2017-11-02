@@ -6,6 +6,8 @@
 ## RxWebSocket是一个基于okhttp和RxJava(RxJava1和RxJava2都有)封装的WebSocket客户端,此库的核心特点是  除了手动关闭WebSocket(就是RxJava取消订阅),WebSocket在异常关闭的时候(onFailure,发生异常,如WebSocketException等等),会自动重连,永不断连.其次,对WebSocket做的缓存处理,同一个URL,共享一个WebSocket.
 ## 原理解析: [戳我戳我戳我](http://blog.csdn.net/huiAndroid/article/details/78071703)
 ## [RxJava2版本点我](https://github.com/dhhAndroid/RxWebSocket/tree/2.x)
+### [查看changeLog](https://github.com/dhhAndroid/RxWebSocket/blob/1.x/ChangeLog.md)
+#### fix: #4,#4,#6
 ## 效果图 ##
 ![](image/WebSocket.gif)
 ### 断网重连测试
@@ -19,7 +21,7 @@
 ```
 
 	//本项目
-	compile 'com.dhh:websocket:1.3.0'
+	compile 'com.dhh:websocket:1.4.0'
 	
 	//okhttp,RxJava,RxAndroid
 	compile 'com.squareup.okhttp3:okhttp:3.9.0'
@@ -36,6 +38,19 @@
         RxWebSocketUtil.getInstance().setShowLog(true);
 
 ```
+### WSS support
+```
+
+        //wss support
+        RxWebSocketUtil.getInstance().setSSLSocketFactory(yourSSlSocketFactory,yourX509TrustManager);
+        RxWebSocketUtil.getInstance().getWebSocket("wss://...");
+        //or
+        OkHttpClient client = new OkHttpClient.Builder()
+                .sslSocketFactory(yourSSlSocketFactory, yourX509TrustManager)
+                //other config...
+                .build();
+        RxWebSocketUtil.getInstance().setClient(client);
+```
 ### open WebSocket
 
 ```
@@ -51,6 +66,47 @@
 	                        });
 	
 	mWebSocket.send("hello word");
+
+        // use WebSocketSubscriber
+        RxWebSocketUtil.getInstance().getWebSocketInfo("ws://10.7.5.88:8089")
+                //RxLifecycle : https://github.com/dhhAndroid/RxLifecycle
+                .compose(RxLifecycle.with(this).<WebSocketInfo>bindOnDestroy())
+                .subscribe(new WebSocketSubscriber() {
+                    @Override
+                    public void onOpen(@NonNull WebSocket webSocket) {
+
+                    }
+
+                    @Override
+                    public void onMessage(@NonNull String text) {
+
+                    }
+
+                    @Override
+                    public void onMessage(@NonNull ByteString bytes) {
+
+                    }
+                });
+        // use WebSokcetAction1
+        RxWebSocketUtil.getInstance().getWebSocketInfo("ws://10.7.5.88:8089")
+                //RxLifecycle : https://github.com/dhhAndroid/RxLifecycle
+                .compose(RxLifecycle.with(this).<WebSocketInfo>bindOnDestroy())
+                .subscribe(new WebSokcetAction1() {
+                    @Override
+                    public void onOpen(@NonNull WebSocket webSocket) {
+
+                    }
+
+                    @Override
+                    public void onMessage(@NonNull String text) {
+
+                    }
+
+                    @Override
+                    public void onMessage(@NonNull ByteString bytes) {
+
+                    }
+                });
 
     //get StringMsg
     RxWebSocketUtil.getInstance().getWebSocketString(url)

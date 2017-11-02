@@ -1,6 +1,7 @@
 package com.dhh.rxwebsocket;
 
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
 import android.util.Log;
@@ -9,8 +10,11 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.dhh.rxlifecycle.RxLifecycle;
 import com.dhh.websocket.RxWebSocketUtil;
 import com.dhh.websocket.WebSocketInfo;
+import com.dhh.websocket.WebSocketSubscriber;
+import com.dhh.websocket.WebSokcetAction1;
 import com.jakewharton.rxbinding.view.RxView;
 
 import java.util.concurrent.TimeUnit;
@@ -58,10 +62,58 @@ public class MainActivity extends AppCompatActivity {
 //        OkHttpClient yourClient = new OkHttpClient();
 //        RxWebSocketUtil.getInstance().setClient(yourClient);
 
+        //wss support
+//        RxWebSocketUtil.getInstance().setSSLSocketFactory(yourSSlSocketFactory,yourX509TrustManager);
+//        RxWebSocketUtil.getInstance().getWebSocket("wss://...");
+        //or
+//        OkHttpClient client = new OkHttpClient.Builder()
+//                .sslSocketFactory(yourSSlSocketFactory, yourX509TrustManager)
+//                other config...
+//                .build();
+//        RxWebSocketUtil.getInstance().setClient(client);
         RxWebSocketUtil.getInstance().setShowLog(BuildConfig.DEBUG);
         final int type = 2;  // 1, 2, 3.
         contect(type);
+        // use WebSocketSubscriber
+        RxWebSocketUtil.getInstance().getWebSocketInfo("ws://10.7.5.88:8089")
+                //RxLifecycle : https://github.com/dhhAndroid/RxLifecycle
+                .compose(RxLifecycle.with(this).<WebSocketInfo>bindOnDestroy())
+                .subscribe(new WebSocketSubscriber() {
+                    @Override
+                    public void onOpen(@NonNull WebSocket webSocket) {
 
+                    }
+
+                    @Override
+                    public void onMessage(@NonNull String text) {
+
+                    }
+
+                    @Override
+                    public void onMessage(@NonNull ByteString bytes) {
+
+                    }
+                });
+        // use WebSokcetAction1
+        RxWebSocketUtil.getInstance().getWebSocketInfo("ws://10.7.5.88:8089")
+                //RxLifecycle : https://github.com/dhhAndroid/RxLifecycle
+                .compose(RxLifecycle.with(this).<WebSocketInfo>bindOnDestroy())
+                .subscribe(new WebSokcetAction1() {
+                    @Override
+                    public void onOpen(@NonNull WebSocket webSocket) {
+
+                    }
+
+                    @Override
+                    public void onMessage(@NonNull String text) {
+
+                    }
+
+                    @Override
+                    public void onMessage(@NonNull ByteString bytes) {
+
+                    }
+                });
 
         //send message
         send.setOnClickListener(new View.OnClickListener() {

@@ -7,6 +7,9 @@ import android.util.Log;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.X509TrustManager;
+
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -81,6 +84,16 @@ public class RxWebSocketUtil {
             throw new NullPointerException(" Are you stupid ? client == null");
         }
         this.client = client;
+    }
+
+    /**
+     * wss support
+     *
+     * @param sslSocketFactory
+     * @param trustManager
+     */
+    public void setSSLSocketFactory(SSLSocketFactory sslSocketFactory, X509TrustManager trustManager) {
+        client = client.newBuilder().sslSocketFactory(sslSocketFactory, trustManager).build();
     }
 
     public void setShowLog(boolean showLog) {
@@ -257,13 +270,8 @@ public class RxWebSocketUtil {
 
         private WebSocket webSocket;
 
-        private WebSocketInfo startInfo, stringInfo, byteStringInfo;
-
         public WebSocketOnSubscribe(String url) {
             this.url = url;
-            startInfo = new WebSocketInfo(true);
-            stringInfo = new WebSocketInfo();
-            byteStringInfo = new WebSocketInfo();
         }
 
         @Override
@@ -285,33 +293,22 @@ public class RxWebSocketUtil {
                         Log.d("RxWebSocketUtil", url + " --> onOpen");
                     }
                     webSocketMap.put(url, webSocket);
-                    AndroidSchedulers.mainThread().createWorker().schedule(new Action0() {
-                        @Override
-                        public void call() {
-                            if (!subscriber.isUnsubscribed()) {
-                                subscriber.onStart();
-                                startInfo.setWebSocket(webSocket);
-                                subscriber.onNext(startInfo);
-                            }
-                        }
-                    });
+                    if (!subscriber.isUnsubscribed()) {
+                        subscriber.onNext(new WebSocketInfo(webSocket, true));
+                    }
                 }
 
                 @Override
                 public void onMessage(WebSocket webSocket, String text) {
                     if (!subscriber.isUnsubscribed()) {
-                        stringInfo.setWebSocket(webSocket);
-                        stringInfo.setString(text);
-                        subscriber.onNext(stringInfo);
+                        subscriber.onNext(new WebSocketInfo(webSocket, text));
                     }
                 }
 
                 @Override
                 public void onMessage(WebSocket webSocket, ByteString bytes) {
                     if (!subscriber.isUnsubscribed()) {
-                        byteStringInfo.setWebSocket(webSocket);
-                        byteStringInfo.setByteString(bytes);
-                        subscriber.onNext(byteStringInfo);
+                        subscriber.onNext(new WebSocketInfo(webSocket, bytes));
                     }
                 }
 
