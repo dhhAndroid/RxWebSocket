@@ -7,7 +7,7 @@
 ## 原理解析: [戳我戳我戳我](http://blog.csdn.net/huiAndroid/article/details/78071703)
 ## [RxJava2版本点我](https://github.com/dhhAndroid/RxWebSocket/tree/2.x)
 ### [查看changeLog](https://github.com/dhhAndroid/RxWebSocket/blob/1.x/ChangeLog.md)
-#### fix: #4,#4,#6
+#### fix: [#3](https://github.com/dhhAndroid/RxWebSocket/issues/3),[#4](https://github.com/dhhAndroid/RxWebSocket/issues/4),[#6](https://github.com/dhhAndroid/RxWebSocket/issues/6)
 ## 效果图 ##
 ![](image/WebSocket.gif)
 ### 断网重连测试
@@ -38,7 +38,7 @@
         RxWebSocketUtil.getInstance().setShowLog(true);
 
 ```
-### WSS support
+### WSS support,其实就是设置okhttp的SSL,请参照okhttp的设置
 ```
 
         //wss support

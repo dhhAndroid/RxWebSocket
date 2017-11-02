@@ -33,4 +33,4 @@ dependencies {
     provided 'io.reactivex:rxandroid:1.2.1'
 }
 //运行demo 请注释掉下面代码
-//apply from: 'bintray.gradle'
+apply from: 'bintray.gradle'
