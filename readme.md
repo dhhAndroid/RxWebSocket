@@ -201,10 +201,10 @@
 
 ```
 
-    Subscription subscription = RxWebSocketUtil.getInstance().getWebSocketString("ws://sdfs").subscribe();
+    Disposable mDisposable = RxWebSocketUtil.getInstance().getWebSocketString("ws://sdfs").subscribe();
 	//注销
-    if(subscription!=null&&!subscription.isUnsubscribed()) {
-        subscription.unsubscribe();
+    if(mDisposable != null && !mDisposable.isDisposed()) {
+        mDisposable.dispose();
     }
 
 ```
