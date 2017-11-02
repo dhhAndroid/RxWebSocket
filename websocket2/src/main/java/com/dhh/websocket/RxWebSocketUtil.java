@@ -7,6 +7,9 @@ import android.util.Log;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.X509TrustManager;
+
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
@@ -84,6 +87,10 @@ public class RxWebSocketUtil {
             throw new NullPointerException(" Are you kidding me ? client == null");
         }
         this.client = client;
+    }
+
+    public void setSSLSocketFactory(SSLSocketFactory sslSocketFactory, X509TrustManager trustManager) {
+        client = client.newBuilder().sslSocketFactory(sslSocketFactory, trustManager).build();
     }
 
     public void setShowLog(boolean showLog) {
@@ -260,13 +267,8 @@ public class RxWebSocketUtil {
 
         private WebSocket webSocket;
 
-        private WebSocketInfo startInfo, stringInfo, byteStringInfo;
-
         public WebSocketOnSubscribe(String url) {
             this.url = url;
-            startInfo = new WebSocketInfo(true);
-            stringInfo = new WebSocketInfo();
-            byteStringInfo = new WebSocketInfo();
         }
 
         @Override
@@ -288,32 +290,22 @@ public class RxWebSocketUtil {
                         Log.d("RxWebSocketUtil", url + " --> onOpen");
                     }
                     webSocketMap.put(url, webSocket);
-                    AndroidSchedulers.mainThread().createWorker().schedule(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (!emitter.isDisposed()) {
-                                startInfo.setWebSocket(webSocket);
-                                emitter.onNext(startInfo);
-                            }
-                        }
-                    });
+                    if (!emitter.isDisposed()) {
+                        emitter.onNext(new WebSocketInfo(webSocket, true));
+                    }
                 }
 
                 @Override
                 public void onMessage(WebSocket webSocket, String text) {
                     if (!emitter.isDisposed()) {
-                        stringInfo.setWebSocket(webSocket);
-                        stringInfo.setString(text);
-                        emitter.onNext(stringInfo);
+                        emitter.onNext(new WebSocketInfo(webSocket, text));
                     }
                 }
 
                 @Override
                 public void onMessage(WebSocket webSocket, ByteString bytes) {
                     if (!emitter.isDisposed()) {
-                        byteStringInfo.setWebSocket(webSocket);
-                        byteStringInfo.setByteString(bytes);
-                        emitter.onNext(byteStringInfo);
+                        emitter.onNext(new WebSocketInfo(webSocket, bytes));
                     }
                 }
 
