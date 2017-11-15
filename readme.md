@@ -7,7 +7,7 @@
 ## 原理解析: [戳我戳我戳我](http://blog.csdn.net/huiAndroid/article/details/78071703)
 ## [RxJava2版本点我](https://github.com/dhhAndroid/RxWebSocket/tree/2.x)
 ### [查看changeLog](https://github.com/dhhAndroid/RxWebSocket/blob/1.x/ChangeLog.md)
-#### fix: [#3](https://github.com/dhhAndroid/RxWebSocket/issues/3),[#4](https://github.com/dhhAndroid/RxWebSocket/issues/4),[#6](https://github.com/dhhAndroid/RxWebSocket/issues/6)
+#### fix: [#3](https://github.com/dhhAndroid/RxWebSocket/issues/3),[#4](https://github.com/dhhAndroid/RxWebSocket/issues/4),[#6](https://github.com/dhhAndroid/RxWebSocket/issues/6),[#11](https://github.com/dhhAndroid/RxWebSocket/issues/11)
 ## 效果图 ##
 ![](image/WebSocket.gif)
 ### 断网重连测试
@@ -21,7 +21,7 @@
 ```
 
 	//本项目
-	compile 'com.dhh:websocket:1.4.0'
+	compile 'com.dhh:websocket:1.5.0'
 	
 	//okhttp,RxJava,RxAndroid
 	compile 'com.squareup.okhttp3:okhttp:3.9.0'

@@ -139,7 +139,10 @@ public class RxWebSocketUtil {
                     .observeOn(AndroidSchedulers.mainThread());
             observableMap.put(url, observable);
         } else {
-            observable = Observable.merge(Observable.just(new WebSocketInfo(webSocketMap.get(url), true)), observable);
+            WebSocket webSocket = webSocketMap.get(url);
+            if (webSocket != null) {
+                observable = observable.startWith(new WebSocketInfo(webSocket, true));
+            }
         }
         return observable;
     }
