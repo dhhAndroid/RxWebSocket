@@ -2,6 +2,7 @@
 ### 1.5.0
  - fix: [#11](https://github.com/dhhAndroid/RxWebSocket/issues/11)
  - 修复WebSocket打开事件发送错误.
+ - 简化依赖关系
 ### 1.4.0
  - fix: [#3](https://github.com/dhhAndroid/RxWebSocket/issues/3),[#4](https://github.com/dhhAndroid/RxWebSocket/issues/4),[#6](https://github.com/dhhAndroid/RxWebSocket/issues/6)
  - 移除WebSocketInfo复用导致数据丢失
