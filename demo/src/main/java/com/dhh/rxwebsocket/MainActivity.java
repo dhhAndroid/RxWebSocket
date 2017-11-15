@@ -83,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(new WebSocketSubscriber() {
                     @Override
                     public void onOpen(@NonNull WebSocket webSocket) {
-
+                        Log.d("MainActivity", "onOpen1:");
                     }
 
                     @Override
@@ -112,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(new WebSocketConsumer() {
                     @Override
                     public void onOpen(WebSocket webSocket) {
-
+                        Log.d("MainActivity", "onOpen2:");
                     }
 
                     @Override
