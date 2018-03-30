@@ -7,7 +7,6 @@
 ## 原理解析: [戳我戳我戳我](http://blog.csdn.net/huiAndroid/article/details/78071703)
 ## [RxJava2版本点我](https://github.com/dhhAndroid/RxWebSocket/tree/2.x)
 ### [查看changeLog](https://github.com/dhhAndroid/RxWebSocket/blob/1.x/ChangeLog.md)
-#### fix: [#3](https://github.com/dhhAndroid/RxWebSocket/issues/3),[#4](https://github.com/dhhAndroid/RxWebSocket/issues/4),[#6](https://github.com/dhhAndroid/RxWebSocket/issues/6),[#11](https://github.com/dhhAndroid/RxWebSocket/issues/11)
 ## 效果图 ##
 ![](image/WebSocket.gif)
 ### 断网重连测试
@@ -18,164 +17,88 @@
 ### 添加依赖: ###
 
 #### 在项目module下gradle加入:
-```
+```gradle
 
-	//本项目
-	compile 'com.dhh:websocket:1.5.0'
+	compile 'com.dhh:websocket:2.0.1'
 	
 ```
 ### init
-```
+```java
 
-        //if you want to use your okhttpClient
-        OkHttpClient yourClient = new OkHttpClient();
-        RxWebSocketUtil.getInstance().setClient(yourClient);
-		// show log,default false
-        RxWebSocketUtil.getInstance().setShowLog(true);
-
-```
-### WSS support,其实就是设置okhttp的SSL,请参照okhttp的设置
-```
-
-        //wss support
-        RxWebSocketUtil.getInstance().setSSLSocketFactory(yourSSlSocketFactory,yourX509TrustManager);
-        RxWebSocketUtil.getInstance().getWebSocket("wss://...");
-        //or
-        OkHttpClient client = new OkHttpClient.Builder()
-                .sslSocketFactory(yourSSlSocketFactory, yourX509TrustManager)
-                //other config...
+        //init config
+        Config config = new Config.Builder()
+                .setShowLog(true)           //show  log
+                .setClient(yourClient)   //if you want to set your okhttpClient
+                .setShowLog(true, "your logTag")
+                .setReconnectInterval(2, TimeUnit.SECONDS)  //set reconnect interval
+                .setSSLSocketFactory(yourSSlSocketFactory, yourX509TrustManager) // wss support
                 .build();
-        RxWebSocketUtil.getInstance().setClient(client);
+        RxWebSocket.setConfig(config);
 ```
-### open WebSocket
+### WSS support,其实就是设置okhttp的SSL,请参照okhttp的设置，请参照上面Config配置
 
-```
+### open WebSocket:和RxJava调用一样，回调请使用项目里提供的 **WebSocketSubscriber**，WebSocketSubscriber是一个没有抽象方法的抽象类，根据业务需求，重写你想使用的回调
 
-	RxWebSocketUtil.getInstance().getWebSocketInfo(url)
-	                        .subscribe(new Action1<WebSocketInfo>() {
-	                            @Override
-	                            public void call(WebSocketInfo webSocketInfo) {
-	                                mWebSocket = webSocketInfo.getWebSocket();
-	                                Log.d("MainActivity", webSocketInfo.getString());
-	                                Log.d("MainActivity", "webSocketInfo.getByteString():" + webSocketInfo.getByteString());
-	                            }
-	                        });
-	
-	mWebSocket.send("hello word");
+```java
 
-        // use WebSocketSubscriber
-        RxWebSocketUtil.getInstance().getWebSocketInfo("ws://10.7.5.88:8089")
+        RxWebSocket.get("url")
+                .subscribe(new WebSocketSubscriber() {
+                    @Override
+                    protected void onMessage(@NonNull String text) {
+
+                    }
+                });
+
+        RxWebSocket.get("your url")
                 //RxLifecycle : https://github.com/dhhAndroid/RxLifecycle
-                .compose(RxLifecycle.with(this).<WebSocketInfo>bindOnDestroy())
+                .compose(RxLifecycle.with(this).<WebSocketInfo>bindToLifecycle())
                 .subscribe(new WebSocketSubscriber() {
                     @Override
                     public void onOpen(@NonNull WebSocket webSocket) {
-
+                        Log.d("MainActivity", "onOpen1:");
                     }
 
                     @Override
                     public void onMessage(@NonNull String text) {
+                        Log.d("MainActivity", "返回数据:" + text);
+                    }
+
+                    @Override
+                    public void onMessage(@NonNull ByteString byteString) {
 
                     }
 
                     @Override
-                    public void onMessage(@NonNull ByteString bytes) {
-
-                    }
-                });
-        // use WebSokcetAction1
-        RxWebSocketUtil.getInstance().getWebSocketInfo("ws://10.7.5.88:8089")
-                //RxLifecycle : https://github.com/dhhAndroid/RxLifecycle
-                .compose(RxLifecycle.with(this).<WebSocketInfo>bindOnDestroy())
-                .subscribe(new WebSokcetAction1() {
-                    @Override
-                    public void onOpen(@NonNull WebSocket webSocket) {
-
+                    protected void onReconnect() {
+                        Log.d("MainActivity", "重连:");
                     }
 
                     @Override
-                    public void onMessage(@NonNull String text) {
-
-                    }
-
-                    @Override
-                    public void onMessage(@NonNull ByteString bytes) {
-
+                    protected void onClose() {
+                        Log.d("MainActivity", "onClose:");
                     }
                 });
 
-    //get StringMsg
-    RxWebSocketUtil.getInstance().getWebSocketString(url)
-            .subscribe(new Action1<String>() {
-                @Override
-                public void call(String s) {
-                }
-            });
-    // get ByteString
-    RxWebSocketUtil.getInstance().getWebSocketByteString(url)
-            .subscribe(new Action1<ByteString>() {
-                @Override
-                public void call(ByteString byteString) {
-
-                }
-            });
-    //get WebSocket
-    RxWebSocketUtil.getInstance().getWebSocket(url)
-            .subscribe(new Action1<WebSocket>() {
-                @Override
-                public void call(WebSocket webSocket) {
-
-                }
-            });
-	//with timeout
-    RxWebSocketUtil.getInstance().getWebSocketInfo(url, 10, TimeUnit.SECONDS)
-            .subscribe(new Action1<WebSocketInfo>() {
-                @Override
-                public void call(WebSocketInfo webSocketInfo) {
-
-                }
-            });
 ```
-```  
 
-	// Rxbinding
-    RxView.clicks(centect)
-            .flatMap(new Func1<Void, Observable<String>>() {
-                @Override
-                public Observable<String> call(Void aVoid) {
-                    return RxWebSocketUtil.getInstance().getWebSocketString(url);
-                }
-            })
-            .subscribe(new Action1<String>() {
-                @Override
-                public void call(String s) {
-                    //the s !=null
-
-                    Log.d("MainActivity", s);
-                    textview.setText(Html.fromHtml(s));
-
-                }
-            });
-```
 ### 发送消息 ###
-```
+```java
 
-	  //用WebSocket的引用直接发
-	  mWebSocket.send("hello word");
+	  	//用WebSocket的引用直接发
+	 	mWebSocket.send("hello word");
 	
-	  //url 对应的WebSocket已经打开可以这样send,否则报错
-	  RxWebSocketUtil.getInstance().send(url, "hello");
-	  RxWebSocketUtil.getInstance().send(url, ByteString.EMPTY);
-	
-	  //异步发送,若WebSocket已经打开,直接发送,若没有打开,打开一个WebSocket发送完数据,直接关闭.
-	  RxWebSocketUtil.getInstance().asyncSend(url, "hello");
-	  RxWebSocketUtil.getInstance().asyncSend(url, ByteString.EMPTY);
+        //url 对应的WebSocket 必须打开,否则报错
+        RxWebSocket.send(url, "hello");
+        RxWebSocket.send(url, ByteString.EMPTY);
+        //异步发送,若WebSocket已经打开,直接发送,若没有打开,打开一个WebSocket发送完数据,直接关闭.
+        RxWebSocket.asyncSend(url, "hello");
+        RxWebSocket.asyncSend(url, ByteString.EMPTY);
 ```
 ### 注销 ###
- RxJava的注销方式,就可以取消订阅. 项目里的demo里,简单实现了一个Lifecycle.仅供参考.
-```
+ RxJava的注销方式,就可以取消订阅.
+```java
 
-    Subscription subscription = RxWebSocketUtil.getInstance().getWebSocketString("ws://sdfs").subscribe();
+    Subscription subscription = RxWebSocket.get("ws://sdfs").subscribe();
 	//注销
     if(subscription!=null&&!subscription.isUnsubscribed()) {
         subscription.unsubscribe();
