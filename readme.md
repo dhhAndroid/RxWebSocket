@@ -18,190 +18,102 @@
 ### 添加依赖: ###
 
 #### 在项目module下gradle加入:
-```
+```gradle
 
-	compile 'com.dhh:websocket2:1.5.0'
+	compile 'com.dhh:websocket2:2.0.1'
 	
 ```
 ### init
-```
+```java
 
-        //if you want to use your okhttpClient
-        OkHttpClient yourClient = new OkHttpClient();
-        RxWebSocketUtil.getInstance().setClient(yourClient);
-		// show log,default false
-        RxWebSocketUtil.getInstance().setShowLog(true);
-
-```
-### WSS support
-```
-
-        //wss support
-        RxWebSocketUtil.getInstance().setSSLSocketFactory(yourSSlSocketFactory,yourX509TrustManager);
-        RxWebSocketUtil.getInstance().getWebSocket("wss://...");
-        //or
-        OkHttpClient client = new OkHttpClient.Builder()
-                .sslSocketFactory(yourSSlSocketFactory, yourX509TrustManager)
-                //other config...
+        //init config
+        Config config = new Config.Builder()
+                .setShowLog(true)           //show  log
+                .setClient(yourClient)   //if you want to set your okhttpClient
+                .setShowLog(true, "your logTag")
+                .setReconnectInterval(2, TimeUnit.SECONDS)  //set reconnect interval
+                .setSSLSocketFactory(yourSSlSocketFactory, yourX509TrustManager) // wss support
                 .build();
-        RxWebSocketUtil.getInstance().setClient(client);
+        RxWebSocket.setConfig(config);
 ```
-### open WebSocket
+### WSS support,其实就是设置okhttp的SSL,请参照okhttp的设置，请参照上面Config配置
 
-```
+### open WebSocket:和RxJava调用一样，回调请使用项目里提供的 **WebSocketSubscriber**，WebSocketSubscriber是一个没有抽象方法的抽象类，根据业务需求，重写你想使用的回调
 
-        mDisposable = RxWebSocketUtil.getInstance().getWebSocketInfo(url)
-                //bind on life
-                .takeUntil(bindOndestroy())
-                .subscribe(new Consumer<WebSocketInfo>() {
+```java
+
+        RxWebSocket.get("url")
+                .compose(RxLifecycle.with(this).<WebSocketInfo>bindToLifecycle())
+                .subscribe(new WebSocketSubscriber() {
                     @Override
-                    public void accept(WebSocketInfo webSocketInfo) throws Exception {
-                        mWebSocket = webSocketInfo.getWebSocket();
-                        if (webSocketInfo.isOnOpen()) {
-                            Log.d("MainActivity", " on WebSocket open");
-                        } else {
-
-                            String string = webSocketInfo.getString();
-                            if (string != null) {
-                                Log.d("MainActivity", string);
-                                textview.setText(Html.fromHtml(string));
-
-                            }
-
-                            ByteString byteString = webSocketInfo.getByteString();
-                            if (byteString != null) {
-                                Log.d("MainActivity", "webSocketInfo.getByteString():" + byteString);
-
-                            }
-                        }
+                    protected void onMessage(@NonNull String text) {
 
                     }
                 });
-	
-	mWebSocket.send("hello word");
 
-        // use WebSocketSubscriber
-        RxWebSocketUtil.getInstance().getWebSocketInfo(url)
+        RxWebSocket.get("your url")
+                //RxLifecycle : https://github.com/dhhAndroid/RxLifecycle
+                .compose(RxLifecycle.with(this).<WebSocketInfo>bindToLifecycle())
                 .subscribe(new WebSocketSubscriber() {
                     @Override
                     public void onOpen(@NonNull WebSocket webSocket) {
-                        
+                        Log.d("MainActivity", "onOpen1:");
                     }
 
                     @Override
                     public void onMessage(@NonNull String text) {
+                        Log.d("MainActivity", "返回数据:" + text);
+                    }
+
+                    @Override
+                    public void onMessage(@NonNull ByteString byteString) {
 
                     }
 
                     @Override
-                    public void onMessage(@NonNull ByteString bytes) {
-
+                    protected void onReconnect() {
+                        Log.d("MainActivity", "重连:");
                     }
 
                     @Override
-                    public void onSubscribe(@NonNull Disposable d) {
-
+                    protected void onClose() {
+                        Log.d("MainActivity", "onClose:");
                     }
                 });
-                
-        // use WebSocketConsumer
-        RxWebSocketUtil.getInstance().getWebSocketInfo("ws://10.7.5.88:8089")
-                .compose(RxLifecycle.with(this).<WebSocketInfo>bindOnDestroy())
-                .subscribe(new WebSocketConsumer() {
+
+```
+
+### 发送消息 ###
+```java
+
+	  	//用WebSocket的引用直接发
+	 	mWebSocket.send("hello word");
+	
+        //url 对应的WebSocket 必须打开,否则报错
+        RxWebSocket.send(url, "hello");
+        RxWebSocket.send(url, ByteString.EMPTY);
+        //异步发送,若WebSocket已经打开,直接发送,若没有打开,打开一个WebSocket发送完数据,直接关闭.
+        RxWebSocket.asyncSend(url, "hello");
+        RxWebSocket.asyncSend(url, ByteString.EMPTY);
+```
+### 注销 ###
+ RxJava的注销方式,就可以取消订阅.
+```java
+
+        Disposable disposable = RxWebSocket.get("ws://sdfs").subscribe();
+        //注销 
+        if (disposable != null && !disposable.isDisposed()) {
+            disposable.dispose();
+        }
+        RxWebSocket.get("url")
+                //自动注销：RxLifecycle : https://github.com/dhhAndroid/RxLifecycle
+                .compose(RxLifecycle.with(this).<WebSocketInfo>bindToLifecycle())
+                .subscribe(new WebSocketSubscriber() {
                     @Override
-                    public void onOpen(WebSocket webSocket) {
-
-                    }
-
-                    @Override
-                    public void onMessage(String text) {
-
-                    }
-
-                    @Override
-                    public void onMessage(ByteString bytes) {
+                    protected void onMessage(@NonNull String text) {
 
                     }
                 });        
-
-        //get StringMsg
-        RxWebSocketUtil.getInstance().getWebSocketString(url)
-                .subscribe(new Consumer<String>() {
-                    @Override
-                    public void accept(String s) throws Exception {
-
-                    }
-                });
-        // get ByteString
-        RxWebSocketUtil.getInstance().getWebSocketByteString(url)
-                .subscribe(new Consumer<ByteString>() {
-                    @Override
-                    public void accept(ByteString byteString) throws Exception {
-
-                    }
-                });
-        //get WebSocket
-        RxWebSocketUtil.getInstance().getWebSocket(url)
-                .subscribe(new Consumer<WebSocket>() {
-                    @Override
-                    public void accept(WebSocket webSocket) throws Exception {
-
-                    }
-                });
-        //with timeout
-        RxWebSocketUtil.getInstance().getWebSocketInfo(url, 10, TimeUnit.SECONDS)
-                .subscribe(new Consumer<WebSocketInfo>() {
-                    @Override
-                    public void accept(WebSocketInfo webSocketInfo) throws Exception {
-
-                    }
-                });
-```
-```  
-
-	// Rxbinding
-    RxView.clicks(centect)
-            .flatMap(new Function<Object, ObservableSource<String>>() {
-                @Override
-                public ObservableSource<String> apply(@NonNull Object o) throws Exception {
-                    return RxWebSocketUtil.getInstance().getWebSocketString(url);
-                }
-            })
-            .subscribe(new Consumer<String>() {
-                @Override
-                public void accept(String s) throws Exception {
-                    //the s !=null
-
-                    Log.d("MainActivity", s);
-                    textview.setText(Html.fromHtml(s));
-                }
-            });
-```
-### 发送消息 ###
-```
-
-	  //用WebSocket的引用直接发
-	  mWebSocket.send("hello word");
-	
-	  //url 对应的WebSocket已经打开可以这样send,否则报错
-	  RxWebSocketUtil.getInstance().send(url, "hello");
-	  RxWebSocketUtil.getInstance().send(url, ByteString.EMPTY);
-	
-	  //异步发送,若WebSocket已经打开,直接发送,若没有打开,打开一个WebSocket发送完数据,直接关闭.
-	  RxWebSocketUtil.getInstance().asyncSend(url, "hello");
-	  RxWebSocketUtil.getInstance().asyncSend(url, ByteString.EMPTY);
-```
-### 注销 ###
-### RxJava的注销方式,就可以取消订阅. 优雅地处理RxJava注销,请查看我另外一个项目:[RxLifecycle](https://github.com/dhhAndroid/RxLifecycle).
-
-```
-
-    Disposable mDisposable = RxWebSocketUtil.getInstance().getWebSocketString("ws://sdfs").subscribe();
-	//注销
-    if(mDisposable != null && !mDisposable.isDisposed()) {
-        mDisposable.dispose();
-    }
-
 ```
 ## 更优雅的注销处理方式,请看我的另一个项目: [RxLifecycle](https://github.com/dhhAndroid/RxLifecycle),优雅地处理RxJava注销问题,和Activity生命周期绑定.
 ## 如果本库对你有帮助,谢谢您的star!

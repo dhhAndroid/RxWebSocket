@@ -1,43 +1,81 @@
 package com.dhh.websocket;
 
-import android.support.annotation.CallSuper;
-
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.Disposable;
 import okhttp3.WebSocket;
 import okio.ByteString;
 
 /**
  * Created by dhh on 2017/10/24.
+ * <p>
+ * override the method of you want to use
+ * <p>
+ * 根据业务需求重写你想使用的方法
  */
 
 public abstract class WebSocketSubscriber implements Observer<WebSocketInfo> {
-    @CallSuper
+    private boolean hasOpened;
+    protected Disposable disposable;
+
     @Override
-    public void onNext(@NonNull WebSocketInfo webSocketInfo) {
+    public final void onNext(@NonNull WebSocketInfo webSocketInfo) {
         if (webSocketInfo.isOnOpen()) {
+            hasOpened = true;
             onOpen(webSocketInfo.getWebSocket());
         } else if (webSocketInfo.getString() != null) {
             onMessage(webSocketInfo.getString());
         } else if (webSocketInfo.getByteString() != null) {
             onMessage(webSocketInfo.getByteString());
+        } else if (webSocketInfo.isOnReconnect()) {
+            onReconnect();
         }
     }
 
-    public abstract void onOpen(@NonNull WebSocket webSocket);
+    /**
+     * Callback when the WebSocket is opened
+     *
+     * @param webSocket
+     */
+    protected void onOpen(@NonNull WebSocket webSocket) {
+    }
 
-    public abstract void onMessage(@NonNull String text);
+    protected void onMessage(@NonNull String text) {
+    }
 
-    public abstract void onMessage(@NonNull ByteString bytes);
+    protected void onMessage(@NonNull ByteString byteString) {
+    }
 
-    @Override
-    public void onError(@NonNull Throwable e) {
+    /**
+     * Callback when the WebSocket is reconnecting
+     */
+    protected void onReconnect() {
+    }
 
+    protected void onClose() {
     }
 
     @Override
-    public void onComplete() {
+    public final void onSubscribe(Disposable disposable) {
+        this.disposable = disposable;
+    }
 
+    public final void dispose() {
+        if (disposable != null) {
+            disposable.dispose();
+        }
+    }
+
+    @Override
+    public final void onComplete() {
+        if (hasOpened) {
+            onClose();
+        }
+    }
+
+    @Override
+    public void onError(Throwable e) {
+        e.printStackTrace();
     }
 
 }

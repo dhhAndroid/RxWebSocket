@@ -14,27 +14,30 @@ public class WebSocketInfo {
     private String mString;
     private ByteString mByteString;
     private boolean onOpen;
+    private boolean onReconnect;
 
-    public WebSocketInfo() {
+    private WebSocketInfo() {
     }
 
-    public WebSocketInfo(boolean onOpen) {
-        this.onOpen = onOpen;
-    }
-
-    public WebSocketInfo(WebSocket webSocket, boolean onOpen) {
+    WebSocketInfo(WebSocket webSocket, boolean onOpen) {
         mWebSocket = webSocket;
         this.onOpen = onOpen;
     }
 
-    public WebSocketInfo(WebSocket webSocket, String mString) {
+    WebSocketInfo(WebSocket webSocket, String mString) {
         mWebSocket = webSocket;
         this.mString = mString;
     }
 
-    public WebSocketInfo(WebSocket webSocket, ByteString byteString) {
+    WebSocketInfo(WebSocket webSocket, ByteString byteString) {
         mWebSocket = webSocket;
         mByteString = byteString;
+    }
+
+    static WebSocketInfo createReconnect() {
+        WebSocketInfo socketInfo = new WebSocketInfo();
+        socketInfo.onReconnect = true;
+        return socketInfo;
     }
 
     public WebSocket getWebSocket() {
@@ -65,5 +68,9 @@ public class WebSocketInfo {
 
     public boolean isOnOpen() {
         return onOpen;
+    }
+
+    public boolean isOnReconnect() {
+        return onReconnect;
     }
 }

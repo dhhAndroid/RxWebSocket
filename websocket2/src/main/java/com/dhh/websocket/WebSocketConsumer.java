@@ -10,7 +10,7 @@ import okio.ByteString;
 /**
  * Created by dhh on 2017/11/1.
  */
-
+@Deprecated
 public abstract class WebSocketConsumer implements Consumer<WebSocketInfo> {
     @CallSuper
     @Override

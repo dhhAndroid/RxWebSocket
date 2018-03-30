@@ -4,6 +4,7 @@ import android.os.SystemClock;
 import android.support.v4.util.ArrayMap;
 import android.util.Log;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -44,6 +45,9 @@ public class RxWebSocketUtil {
     private Map<String, Observable<WebSocketInfo>> observableMap;
     private Map<String, WebSocket> webSocketMap;
     private boolean showLog;
+    private String logTag = "RxWebSocket";
+    private long interval = 1;
+    private TimeUnit reconnectIntervalTimeUnit = TimeUnit.SECONDS;
 
     private RxWebSocketUtil() {
         try {
@@ -66,6 +70,12 @@ public class RxWebSocketUtil {
         client = new OkHttpClient();
     }
 
+    /**
+     * please use {@link RxWebSocket} to instead of it
+     *
+     * @return
+     */
+    @Deprecated
     public static RxWebSocketUtil getInstance() {
         if (instance == null) {
             synchronized (RxWebSocketUtil.class) {
@@ -97,6 +107,17 @@ public class RxWebSocketUtil {
         this.showLog = showLog;
     }
 
+    public void setShowLog(boolean showLog, String logTag) {
+        setShowLog(showLog);
+        this.logTag = logTag;
+    }
+
+    public void setReconnectInterval(long interval, TimeUnit timeUnit) {
+        this.interval = interval;
+        this.reconnectIntervalTimeUnit = timeUnit;
+
+    }
+
     /**
      * @param url      ws://127.0.0.1:8080/websocket
      * @param timeout  The WebSocket will be reconnected after the specified time interval is not "onMessage",
@@ -111,7 +132,12 @@ public class RxWebSocketUtil {
             observable = Observable.create(new WebSocketOnSubscribe(url))
                     //自动重连
                     .timeout(timeout, timeUnit)
-                    .retry()
+                    .retry(new Predicate<Throwable>() {
+                        @Override
+                        public boolean test(Throwable throwable) throws Exception {
+                            return throwable instanceof IOException;
+                        }
+                    })
                     //共享
                     .doOnDispose(new Action() {
                         @Override
@@ -119,7 +145,7 @@ public class RxWebSocketUtil {
                             observableMap.remove(url);
                             webSocketMap.remove(url);
                             if (showLog) {
-                                Log.d("RxWebSocketUtil", "注销");
+                                Log.d(logTag, "OnDispose");
                             }
                         }
                     })
@@ -275,14 +301,19 @@ public class RxWebSocketUtil {
         }
 
         @Override
-        public void subscribe(@NonNull ObservableEmitter<WebSocketInfo> e) throws Exception {
+        public void subscribe(@NonNull ObservableEmitter<WebSocketInfo> emitter) throws Exception {
             if (webSocket != null) {
                 //降低重连频率
                 if (!"main".equals(Thread.currentThread().getName())) {
-                    SystemClock.sleep(2000);
+                    long ms = reconnectIntervalTimeUnit.toMillis(interval);
+                    if (ms == 0) {
+                        ms = 1000;
+                    }
+                    SystemClock.sleep(ms);
+                    emitter.onNext(WebSocketInfo.createReconnect());
                 }
             }
-            initWebSocket(e);
+            initWebSocket(emitter);
         }
 
         private void initWebSocket(final ObservableEmitter<WebSocketInfo> emitter) {
@@ -290,7 +321,7 @@ public class RxWebSocketUtil {
                 @Override
                 public void onOpen(final WebSocket webSocket, Response response) {
                     if (showLog) {
-                        Log.d("RxWebSocketUtil", url + " --> onOpen");
+                        Log.d(logTag, url + " --> onOpen");
                     }
                     webSocketMap.put(url, webSocket);
                     if (!emitter.isDisposed()) {
@@ -315,7 +346,7 @@ public class RxWebSocketUtil {
                 @Override
                 public void onFailure(WebSocket webSocket, Throwable t, Response response) {
                     if (showLog) {
-                        Log.e("RxWebSocketUtil", t.toString() + webSocket.request().url().uri().getPath());
+                        Log.e(logTag, t.toString() + webSocket.request().url().uri().getPath());
                     }
                     if (!emitter.isDisposed()) {
                         emitter.onError(t);
@@ -330,14 +361,14 @@ public class RxWebSocketUtil {
                 @Override
                 public void onClosed(WebSocket webSocket, int code, String reason) {
                     if (showLog) {
-                        Log.d("RxWebSocketUtil", url + " --> onClosed:code= " + code);
+                        Log.d(logTag, url + " --> onClosed:code= " + code);
                     }
                 }
             });
             emitter.setCancellable(new Cancellable() {
                 @Override
                 public void cancel() throws Exception {
-                    webSocket.close(3000, "手动关闭");
+                    webSocket.close(3000, "close WebSocket");
                 }
             });
         }

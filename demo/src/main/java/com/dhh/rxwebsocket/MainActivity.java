@@ -10,24 +10,15 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.dhh.rxlifecycle2.RxLifecycle;
-import com.dhh.websocket.RxWebSocketUtil;
-import com.dhh.websocket.WebSocketConsumer;
+import com.dhh.websocket.Config;
+import com.dhh.websocket.RxWebSocket;
 import com.dhh.websocket.WebSocketInfo;
 import com.dhh.websocket.WebSocketSubscriber;
-import com.jakewharton.rxbinding2.view.RxView;
 
-import java.util.concurrent.TimeUnit;
-
-import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
-import io.reactivex.ObservableTransformer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
-import io.reactivex.functions.Function;
-import io.reactivex.functions.Predicate;
 import io.reactivex.schedulers.Schedulers;
-import io.reactivex.subjects.BehaviorSubject;
 import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
@@ -36,7 +27,6 @@ import okhttp3.mockwebserver.MockWebServer;
 import okio.ByteString;
 
 public class MainActivity extends AppCompatActivity {
-    private BehaviorSubject<ActivityEvent> lifeCycle = BehaviorSubject.create();
     private WebSocket mWebSocket;
     private EditText editText;
     private Button send;
@@ -47,39 +37,25 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        lifeCycle.onNext(ActivityEvent.onCreate);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initView();
 
 
-        Schedulers.io().createWorker().schedule(new Runnable() {
-            @Override
-            public void run() {
-                initServerWebsocket();
-            }
-        });
+        //init config
+        Config config = new Config.Builder()
+                .setShowLog(true)           //show  log
+//                .setClient(yourClient)   //if you want to set your okhttpClient
+//                .setShowLog(true, "your logTag")
+//                .setReconnectInterval(2, TimeUnit.SECONDS)  //set reconnect interval
+//                .setSSLSocketFactory(yourSSlSocketFactory, yourX509TrustManager) // wss support
+                .build();
+        RxWebSocket.setConfig(config);
 
-        //if you want to set your okhttpClient
-//        OkHttpClient yourClient = new OkHttpClient();
-//        RxWebSocketUtil.getInstance().setClient(yourClient);
-
-        //wss support
-//        RxWebSocketUtil.getInstance().setSSLSocketFactory(yourSSlSocketFactory,yourX509TrustManager);
-//        RxWebSocketUtil.getInstance().getWebSocket("wss://...");
-        //or
-//        OkHttpClient client = new OkHttpClient.Builder()
-//                .sslSocketFactory(yourSSlSocketFactory, yourX509TrustManager)
-//                other config...
-//                .build();
-//        RxWebSocketUtil.getInstance().setClient(client);
-        RxWebSocketUtil.getInstance().setShowLog(BuildConfig.DEBUG);
-        final int type = 2;  // 1, 2, 3.
-        contect(type);
         // use WebSocketSubscriber
-        RxWebSocketUtil.getInstance().getWebSocketInfo("ws://10.7.5.88:8089")
+        RxWebSocket.get("ws://10.7.5.88:8089/status")
                 //RxLifecycle : https://github.com/dhhAndroid/RxLifecycle
-                .compose(RxLifecycle.with(this).<WebSocketInfo>bindOnDestroy())
+                .compose(RxLifecycle.with(this).<WebSocketInfo>bindToLifecycle())
                 .subscribe(new WebSocketSubscriber() {
                     @Override
                     public void onOpen(@NonNull WebSocket webSocket) {
@@ -88,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onMessage(@NonNull String text) {
-
+                        Log.d("MainActivity", text);
                     }
 
                     @Override
@@ -97,55 +73,97 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void onSubscribe(@NonNull Disposable d) {
+                    protected void onReconnect() {
+                        Log.d("MainActivity", "重连");
+                    }
+
+                    @Override
+                    protected void onClose() {
 
                     }
 
                     @Override
-                    public void onError(@NonNull Throwable e) {
-                        Log.d("MainActivity", "e:" + e);
-                    }
-                });
-        // use WebSocketConsumer
-        RxWebSocketUtil.getInstance().getWebSocketInfo("ws://10.7.5.88:8089")
-                .compose(RxLifecycle.with(this).<WebSocketInfo>bindOnDestroy())
-                .subscribe(new WebSocketConsumer() {
-                    @Override
-                    public void onOpen(WebSocket webSocket) {
-                        Log.d("MainActivity", "onOpen2:");
-                    }
-
-                    @Override
-                    public void onMessage(String text) {
-
-                    }
-
-                    @Override
-                    public void onMessage(ByteString bytes) {
+                    public void onError(Throwable e) {
 
                     }
                 });
 
 
-        //send message
-        send.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String msg = editText.getText().toString();
-                if (mWebSocket != null) {
-                    mWebSocket.send(msg);
-                } else {
-                    send();
-                }
-            }
-        });
+        RxWebSocket.get("ws://10.7.5.88:8089/status")
+                .subscribe(new WebSocketSubscriber() {
+                    @Override
+                    protected void onMessage(String text) {
 
-        Disposable disposable = RxWebSocketUtil.getInstance().getWebSocketString("ws://sdfs").subscribe();
+                    }
+
+                    @Override
+                    protected void onReconnect() {
+                        Log.d("MainActivity", "重连");
+                    }
+                });
+
+        //注销
+        Disposable disposable = RxWebSocket.get("ws://sdfs").subscribe();
         if (disposable != null && !disposable.isDisposed()) {
             disposable.dispose();
         }
 
+        initDemo();
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        RxWebSocket.get("url")
+                .compose(RxLifecycle.with(this).<WebSocketInfo>bindToLifecycle())
+                .subscribe(new WebSocketSubscriber() {
+                    @Override
+                    protected void onMessage(@NonNull String text) {
+
+                    }
+                });
+
+        RxWebSocket.get("your url")
+                //RxLifecycle : https://github.com/dhhAndroid/RxLifecycle
+                .compose(RxLifecycle.with(this).<WebSocketInfo>bindToLifecycle())
+                .subscribe(new WebSocketSubscriber() {
+                    @Override
+                    public void onOpen(@NonNull WebSocket webSocket) {
+                        Log.d("MainActivity", "onOpen1:");
+                    }
+
+                    @Override
+                    public void onMessage(@NonNull String text) {
+                        Log.d("MainActivity", "返回数据:" + text);
+                    }
+
+                    @Override
+                    public void onMessage(@NonNull ByteString byteString) {
+
+                    }
+
+                    @Override
+                    protected void onReconnect() {
+                        Log.d("MainActivity", "重连:");
+                    }
+
+                    @Override
+                    protected void onClose() {
+                        Log.d("MainActivity", "onClose:");
+                    }
+                });
+    }
+
+    private void initDemo() {
+        Schedulers.io().createWorker().schedule(new Runnable() {
+            @Override
+            public void run() {
+                initServerWebsocket();
+            }
+        });
+
+        setListener();
     }
 
     private void initServerWebsocket() {
@@ -174,189 +192,71 @@ public class MainActivity extends AppCompatActivity {
         }));
     }
 
-    //=================================== my lifecycle  start===================================//
-    public Observable<ActivityEvent> bindOndestroy() {
-        return lifeCycle.filter(new Predicate<ActivityEvent>() {
+    private void setListener() {
+        //send message
+        send.setOnClickListener(new View.OnClickListener() {
             @Override
-            public boolean test(@NonNull ActivityEvent activityEvent) throws Exception {
-                return activityEvent == ActivityEvent.onDestory;
+            public void onClick(View v) {
+                String msg = editText.getText().toString();
+                if (mWebSocket != null) {
+                    mWebSocket.send(msg);
+                } else {
+                    send();
+                }
             }
         });
-    }
+        centect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                connect();
 
-    public <T> Lifecycle<T> bindOnActivityEvent(ActivityEvent event) {
-        return new Lifecycle<>(event);
-    }
-
-
-    public class Lifecycle<T> implements ObservableTransformer<T, T> {
-        private ActivityEvent mActivityEvent;
-
-        public Lifecycle() {
-        }
-
-        public Lifecycle(ActivityEvent activityEvent) {
-            mActivityEvent = activityEvent;
-        }
-
-        @Override
-        public ObservableSource<T> apply(@NonNull Observable<T> upstream) {
-            if (mActivityEvent == null) {
-                return upstream.takeUntil(bindOndestroy());
-
-            } else {
-                return upstream.takeUntil(lifeCycle.filter(new Predicate<ActivityEvent>() {
-                    @Override
-                    public boolean test(@NonNull ActivityEvent activityEvent) throws Exception {
-                        return activityEvent == ActivityEvent.onDestory;
-                    }
-                }));
             }
-        }
-    }
-//=================================== my lifecycle  end===================================//
-
-
-    private void contect(int type) {
-        switch (type) {
-            case 1:
-                centect.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        if (mDisposable != null) return;
-                        //注意取消订阅,有多种方式,比如 rxlifecycle
-                        mDisposable = RxWebSocketUtil.getInstance().getWebSocketInfo(url)
-                                //bind on life
-                                .takeUntil(bindOndestroy())
-                                .subscribe(new Consumer<WebSocketInfo>() {
-                                    @Override
-                                    public void accept(WebSocketInfo webSocketInfo) throws Exception {
-                                        mWebSocket = webSocketInfo.getWebSocket();
-                                        if (webSocketInfo.isOnOpen()) {
-                                            Log.d("MainActivity", " on WebSocket open");
-                                        } else {
-
-                                            String string = webSocketInfo.getString();
-                                            if (string != null) {
-                                                Log.d("MainActivity", string);
-                                                textview.setText(Html.fromHtml(string));
-
-                                            }
-
-                                            ByteString byteString = webSocketInfo.getByteString();
-                                            if (byteString != null) {
-                                                Log.d("MainActivity", "webSocketInfo.getByteString():" + byteString);
-
-                                            }
-                                        }
-
-                                    }
-                                });
-
-                    }
-                });
-                break;
-            case 2:
-                //RxBinding
-                RxView.clicks(centect)
-                        .flatMap(new Function<Object, ObservableSource<WebSocketInfo>>() {
-                            @Override
-                            public ObservableSource<WebSocketInfo> apply(@NonNull Object o) throws Exception {
-                                return RxWebSocketUtil.getInstance().getWebSocketInfo(url);
-                            }
-                        })
-                        .compose(new Lifecycle<WebSocketInfo>())
-                        .subscribe(new Consumer<WebSocketInfo>() {
-                            @Override
-                            public void accept(WebSocketInfo webSocketInfo) throws Exception {
-                                mWebSocket = webSocketInfo.getWebSocket();
-                                if (webSocketInfo.isOnOpen()) {
-                                    Log.d("MainActivity", " on WebSocket open");
-                                } else {
-
-                                    String string = webSocketInfo.getString();
-                                    if (string != null) {
-                                        Log.d("MainActivity", string);
-                                        textview.setText(Html.fromHtml(string));
-
-                                    }
-
-                                    ByteString byteString = webSocketInfo.getByteString();
-                                    if (byteString != null) {
-                                        Log.d("MainActivity", "webSocketInfo.getByteString():" + byteString);
-
-                                    }
-                                }
-                            }
-                        });
-                break;
-            case 3:
-                RxView.clicks(centect)
-                        .flatMap(new Function<Object, ObservableSource<String>>() {
-                            @Override
-                            public ObservableSource<String> apply(@NonNull Object o) throws Exception {
-                                return RxWebSocketUtil.getInstance().getWebSocketString(url);
-                            }
-                        })
-                        //bind on life
-                        .compose(this.<String>bindOnActivityEvent(ActivityEvent.onDestory))
-                        .subscribe(new Consumer<String>() {
-                            @Override
-                            public void accept(String s) throws Exception {
-                                //the s !=null
-
-                                Log.d("MainActivity", s);
-                                textview.setText(Html.fromHtml(s));
-                            }
-                        });
-                break;
-        }
+        });
 
     }
 
-
-    public void otherUse() {
-        //get StringMsg
-        RxWebSocketUtil.getInstance().getWebSocketString(url)
-                .subscribe(new Consumer<String>() {
-                    @Override
-                    public void accept(String s) throws Exception {
-
-                    }
-                });
-        // get ByteString
-        RxWebSocketUtil.getInstance().getWebSocketByteString(url)
-                .subscribe(new Consumer<ByteString>() {
-                    @Override
-                    public void accept(ByteString byteString) throws Exception {
-
-                    }
-                });
-        //get WebSocket
-        RxWebSocketUtil.getInstance().getWebSocket(url)
-                .subscribe(new Consumer<WebSocket>() {
-                    @Override
-                    public void accept(WebSocket webSocket) throws Exception {
-
-                    }
-                });
-        //with timeout
-        RxWebSocketUtil.getInstance().getWebSocketInfo(url, 10, TimeUnit.SECONDS)
+    private void connect() {
+        if (mDisposable != null) return;
+        //注意取消订阅,有多种方式,比如 rxlifecycle
+        mDisposable = RxWebSocket.get(url)
+                // RxLifeCycle: https://github.com/dhhAndroid/RxLifecycle
+                .compose(RxLifecycle.with(this).<WebSocketInfo>bindOnDestroy())
                 .subscribe(new Consumer<WebSocketInfo>() {
                     @Override
                     public void accept(WebSocketInfo webSocketInfo) throws Exception {
+                        mWebSocket = webSocketInfo.getWebSocket();
+                        if (webSocketInfo.isOnOpen()) {
+                            Log.d("MainActivity", " on WebSocket open");
+                        } else {
+
+                            String string = webSocketInfo.getString();
+                            if (string != null) {
+                                Log.d("MainActivity", string);
+                                textview.setText(Html.fromHtml(string));
+
+                            }
+
+                            ByteString byteString = webSocketInfo.getByteString();
+                            if (byteString != null) {
+                                Log.d("MainActivity", "webSocketInfo.getByteString():" + byteString);
+
+                            }
+                        }
 
                     }
                 });
     }
 
+
     public void send() {
+        //引用直接发
+        mWebSocket.send("hello");
         //url 对应的WebSocket 必须打开,否则报错
-        RxWebSocketUtil.getInstance().send(url, "hello");
-        RxWebSocketUtil.getInstance().send(url, ByteString.EMPTY);
+        RxWebSocket.send(url, "hello");
+        RxWebSocket.send(url, ByteString.EMPTY);
         //异步发送,若WebSocket已经打开,直接发送,若没有打开,打开一个WebSocket发送完数据,直接关闭.
-        RxWebSocketUtil.getInstance().asyncSend(url, "hello");
-        RxWebSocketUtil.getInstance().asyncSend(url, ByteString.EMPTY);
+        RxWebSocket.asyncSend(url, "hello");
+        RxWebSocket.asyncSend(url, ByteString.EMPTY);
     }
 
     private void initView() {
@@ -368,7 +268,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        lifeCycle.onNext(ActivityEvent.onDestory);
         super.onDestroy();
         if (mDisposable != null) {
             mDisposable.dispose();
