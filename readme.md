@@ -18,12 +18,12 @@
 
 #### 在项目module下gradle加入:
 ```gradle
-    compile 'com.dhh:websocket:2.0.1'
+    implementation 'com.dhh:websocket:2.1.1'
 ```
 ### init
 ```java
 
-        //init config
+        //init config 在使用RxWebSocket之前设置即可，推荐在application里初始化
         Config config = new Config.Builder()
                 .setShowLog(true)           //show  log
                 .setClient(yourClient)   //if you want to set your okhttpClient
@@ -77,6 +77,22 @@
                     }
                 });
 
+```
+#### 如果你想将String类型的text解析成具体的实体类,请使用 **WebSocketSubscriber2**
+```java
+        /**
+         *
+         *如果你想将String类型的text解析成具体的实体类，比如{@link List<String>},
+         * 请使用 {@link  WebSocketSubscriber2}，仅需要将泛型传入即可
+         */
+        RxWebSocket.get("your url")
+                .compose(RxLifecycle.with(this).<WebSocketInfo>bindToLifecycle())
+                .subscribe(new WebSocketSubscriber2<List<String>>() {
+                    @Override
+                    protected void onMessage(List<String> strings) {
+
+                    }
+                });
 ```
 
 ### 发送消息 ###

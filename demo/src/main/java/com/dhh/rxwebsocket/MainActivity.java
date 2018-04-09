@@ -15,6 +15,9 @@ import com.dhh.websocket.Config;
 import com.dhh.websocket.RxWebSocket;
 import com.dhh.websocket.WebSocketInfo;
 import com.dhh.websocket.WebSocketSubscriber;
+import com.dhh.websocket.WebSocketSubscriber2;
+
+import java.util.List;
 
 import okhttp3.Response;
 import okhttp3.WebSocket;
@@ -77,17 +80,37 @@ public class MainActivity extends AppCompatActivity {
                         Log.d("MainActivity", "重连:");
                     }
                 });
-        Subscription subscription = RxWebSocket.get("ws://sdfsd")
+        /**
+         *
+         *如果你想将String类型的text解析成具体的实体类，比如{@link List<String>},
+         * 请使用 {@link  WebSocketSubscriber2}，仅需要将泛型传入即可
+         */
+        RxWebSocket.get("your url")
+                .compose(RxLifecycle.with(this).<WebSocketInfo>bindToLifecycle())
+                .subscribe(new WebSocketSubscriber2<List<String>>() {
+                    @Override
+                    protected void onMessage(List<String> strings) {
+
+                    }
+                });
+
+        mSubscription = RxWebSocket.get("ws://sdfsd")
                 .subscribe(new WebSocketSubscriber() {
                     @Override
                     protected void onClose() {
                         Log.d("MainActivity", "直接关闭");
                     }
                 });
-        if (subscription != null && !subscription.isUnsubscribed()) {
-            subscription.unsubscribe();
-        }
+
         initDemo();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mSubscription != null && !mSubscription.isUnsubscribed()) {
+            mSubscription.unsubscribe();
+        }
     }
 
     @Override

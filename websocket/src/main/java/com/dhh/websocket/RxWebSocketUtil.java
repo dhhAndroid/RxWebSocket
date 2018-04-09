@@ -34,7 +34,11 @@ import rx.schedulers.Schedulers;
  * WebSocketUtil based on okhttp and RxJava
  * </p>
  * Core Feature : WebSocket will be auto reconnection onFailed.
+ * <p>
+ * please use {@link RxWebSocket} to instead of it
+ * <p>
  */
+@Deprecated
 public class RxWebSocketUtil {
     private static RxWebSocketUtil instance;
 
