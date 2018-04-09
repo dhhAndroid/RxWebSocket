@@ -14,6 +14,9 @@ import com.dhh.websocket.Config;
 import com.dhh.websocket.RxWebSocket;
 import com.dhh.websocket.WebSocketInfo;
 import com.dhh.websocket.WebSocketSubscriber;
+import com.dhh.websocket.WebSocketSubscriber2;
+
+import java.util.List;
 
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
@@ -99,6 +102,20 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     protected void onReconnect() {
                         Log.d("MainActivity", "重连");
+                    }
+                });
+
+        /**
+         *
+         *如果你想将String类型的text解析成具体的实体类，比如{@link List<String>},
+         * 请使用 {@link  WebSocketSubscriber2}，仅需要将泛型传入即可
+         */
+        RxWebSocket.get("your url")
+                .compose(RxLifecycle.with(this).<WebSocketInfo>bindToLifecycle())
+                .subscribe(new WebSocketSubscriber2<List<String>>() {
+                    @Override
+                    protected void onMessage(List<String> strings) {
+
                     }
                 });
 

@@ -37,6 +37,7 @@ import okio.ByteString;
  * </p>
  * Core Feature : WebSocket will be auto reconnection onFailed.
  */
+@Deprecated
 public class RxWebSocketUtil {
     private static RxWebSocketUtil instance;
 
