@@ -4,7 +4,6 @@ import android.os.SystemClock;
 import android.support.v4.util.ArrayMap;
 import android.util.Log;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -24,7 +23,6 @@ import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.functions.Func1;
-import rx.functions.Func2;
 import rx.schedulers.Schedulers;
 
 
@@ -140,12 +138,7 @@ public class RxWebSocketUtil {
             observable = Observable.create(new WebSocketOnSubscribe(url))
                     //自动重连
                     .timeout(timeout, timeUnit)
-                    .retry(new Func2<Integer, Throwable, Boolean>() {
-                        @Override
-                        public Boolean call(Integer integer, Throwable throwable) {
-                            return throwable instanceof IOException;
-                        }
-                    })
+                    .retry()
                     //共享
                     .doOnUnsubscribe(new Action0() {
                         @Override
@@ -369,7 +362,7 @@ public class RxWebSocketUtil {
                 @Override
                 public void onClosed(WebSocket webSocket, int code, String reason) {
                     if (showLog) {
-                        Log.d(logTag, url + " --> onClosed:code= " + code);
+                        Log.d(logTag, url + " --> onClosed:code = " + code + ", reason = " + reason);
                     }
                 }
             });
@@ -377,6 +370,9 @@ public class RxWebSocketUtil {
                 @Override
                 protected void onUnsubscribe() {
                     webSocket.close(3000, "close WebSocket");
+                    if (showLog) {
+                        Log.d(logTag, url + " --> onUnsubscribe ");
+                    }
                 }
             });
         }
