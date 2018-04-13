@@ -20,7 +20,7 @@
 #### 在项目module下gradle加入:
 ```gradle
 
-    implementation  'com.dhh:websocket2:2.1.1'
+    implementation  'com.dhh:websocket2:2.1.2'
     
 ```
 ### init

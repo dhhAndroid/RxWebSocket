@@ -7,6 +7,7 @@ import android.util.Log;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
@@ -136,7 +137,7 @@ public class RxWebSocketUtil {
                     .retry(new Predicate<Throwable>() {
                         @Override
                         public boolean test(Throwable throwable) throws Exception {
-                            return throwable instanceof IOException;
+                            return throwable instanceof IOException || throwable instanceof TimeoutException;
                         }
                     })
                     //共享
@@ -370,6 +371,9 @@ public class RxWebSocketUtil {
                 @Override
                 public void cancel() throws Exception {
                     webSocket.close(3000, "close WebSocket");
+                    if (showLog) {
+                        Log.d(logTag, url + " --> cancel ");
+                    }
                 }
             });
         }
