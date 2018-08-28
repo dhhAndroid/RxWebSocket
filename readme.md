@@ -34,6 +34,15 @@
         RxWebSocket.setConfig(config);
 ```
 ### WSS support,其实就是设置okhttp的SSL,请参照okhttp的设置，请参照上面Config配置
+### 心跳检测：需要设置自己的okhttpClient，在上面的Config里设置心跳间隔：
+```java
+
+        Config config = new Config.Builder()
+                .setClient(new OkHttpClient.Builder()
+                        .pingInterval(3, TimeUnit.SECONDS) // 设置心跳间隔，这个是3秒检测一次
+                        .build())  //if you want to set your okhttpClient
+                .build();
+```
 
 ### open WebSocket:和RxJava调用一样，回调请使用项目里提供的 **WebSocketSubscriber**，WebSocketSubscriber是一个没有抽象方法的抽象类，根据业务需求，重写你想使用的回调
 
