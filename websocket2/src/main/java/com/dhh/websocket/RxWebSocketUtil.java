@@ -216,6 +216,13 @@ public class RxWebSocketUtil {
 
     public Observable<WebSocket> getWebSocket(String url) {
         return getWebSocketInfo(url)
+                //fix #31
+                .filter(new Predicate<WebSocketInfo>() {
+                    @Override
+                    public boolean test(WebSocketInfo webSocketInfo) throws Exception {
+                        return webSocketInfo.getWebSocket() != null;
+                    }
+                })
                 .map(new Function<WebSocketInfo, WebSocket>() {
                     @Override
                     public WebSocket apply(@NonNull WebSocketInfo webSocketInfo) throws Exception {

@@ -17,11 +17,13 @@ import com.dhh.websocket.WebSocketSubscriber;
 import com.dhh.websocket.WebSocketSubscriber2;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
+import okhttp3.OkHttpClient;
 import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
@@ -55,6 +57,8 @@ public class MainActivity extends AppCompatActivity {
                 .build();
         RxWebSocket.setConfig(config);
 
+        // ping/pong 设置：在设置config的时候，从okhttpclient中配置：（将此client设置到上面的config中）
+        OkHttpClient client = new OkHttpClient.Builder().pingInterval(1, TimeUnit.SECONDS).build();
         // use WebSocketSubscriber
         RxWebSocket.get("ws://10.7.5.88:8089/status")
                 //RxLifecycle : https://github.com/dhhAndroid/RxLifecycle
