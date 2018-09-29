@@ -1,11 +1,11 @@
 package com.dhh.websocket;
 
 import android.os.SystemClock;
-import android.support.v4.util.ArrayMap;
 import android.util.Log;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -67,8 +67,8 @@ public class RxWebSocketUtil {
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("Must be dependency rxandroid 2.x");
         }
-        observableMap = new ArrayMap<>();
-        webSocketMap = new ArrayMap<>();
+        observableMap = new ConcurrentHashMap<>();
+        webSocketMap = new ConcurrentHashMap<>();
         client = new OkHttpClient();
     }
 
@@ -169,7 +169,7 @@ public class RxWebSocketUtil {
                 observable = observable.startWith(new WebSocketInfo(webSocket, true));
             }
         }
-        return observable;
+        return observable.observeOn(AndroidSchedulers.mainThread());
     }
 
     /**

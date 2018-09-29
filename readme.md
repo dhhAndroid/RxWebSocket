@@ -17,10 +17,10 @@
 
 ### 添加依赖: ###
 
-#### 在项目module下gradle加入:
+#### 在项目module下gradle加入:(version为：[ ![Download](https://api.bintray.com/packages/dhhandroid/maven/RxWebSocket2/images/download.svg) ](https://bintray.com/dhhandroid/maven/RxWebSocket2/_latestVersion))
 ```gradle
 
-    implementation  'com.dhh:websocket2:2.1.2'
+    implementation  'com.dhh:websocket2:version'
     
 ```
 ### init
