@@ -131,7 +131,7 @@
                     }
                 });        
 ```
-## 更优雅的注销处理方式,请看我的另一个项目: [RxLifecycle](https://github.com/dhhAndroid/RxLifecycle),优雅地处理RxJava注销问题,和Activity生命周期绑定.
+## 更优雅的注销处理方式,请看我的另一个项目: [RxLife](https://github.com/dhhAndroid/RxLife),优雅地处理RxJava注销问题,和Activity生命周期绑定.
 ## 如果本库对你有帮助,谢谢您的star!
 License
 -------
