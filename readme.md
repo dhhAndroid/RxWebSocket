@@ -1,5 +1,5 @@
 # RxWebSocket #
-## 招聘：我司正在招聘Android架构师职位，如有兴趣，请点击[ Android 架构师](https://www.lagou.com/jobs/6143130.html?source=pl&i=pl-2&show=2996b58ba8d24315bac6932d3193e775)查看招聘详情，简历可发送到 dhh@gs-robot.com 邮箱，期待你的到来！
+## 此项目不再维护，请慎重使用，可查看源码学习！
 [![](https://img.shields.io/badge/platform-android-brightgreen.svg)](https://developer.android.com/index.html) 
 [ ![Download](https://api.bintray.com/packages/dhhandroid/maven/rxwebsocket/images/download.svg) ](https://bintray.com/dhhandroid/maven/rxwebsocket/_latestVersion)
 [ ![API](https://img.shields.io/badge/API-11%2B-blue.svg?style=flat-square) ](https://developer.android.com/about/versions/android-3.0.html)
@@ -128,9 +128,6 @@
 
 ```
 ## 更优雅的注销处理方式,请看我的另一个项目: [RxLife](https://github.com/dhhAndroid/RxLife),优雅地处理RxJava注销问题,和Activity生命周期绑定.
-## 如果本库对你有帮助,谢谢您的star!
-### RxJava交流群
-[![点击加群](image/RxJava交流群群二维码.png)](https://jq.qq.com/?_wv=1027&k=59SkTQ6) 
 
 License
 -------
