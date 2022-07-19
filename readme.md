@@ -1,4 +1,5 @@
 # RxWebSocket #
+## 此项目不再维护，请慎重使用，可查看源码学习！
 [![](https://img.shields.io/badge/platform-android-brightgreen.svg)](https://developer.android.com/index.html) 
 [ ![Download](https://api.bintray.com/packages/dhhandroid/maven/RxWebSocket2/images/download.svg) ](https://bintray.com/dhhandroid/maven/RxWebSocket2/_latestVersion)
 [ ![API](https://img.shields.io/badge/API-11%2B-blue.svg?style=flat-square) ](https://developer.android.com/about/versions/android-3.0.html)
